@@ -1,0 +1,555 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#141920"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23FFC531%22/%3E%3C/svg%3E"></head><body><title>Trabajo Estandarizado</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: escenario fijo 1280×800 (tablet horizontal) escalado a la ventana; barra superior con pasos; cada paso arma su escena (mismo formato que la Mesa 1) */
+:root{
+  color-scheme:dark;
+  --floor:#1B2129; --panel:#252E38; --panel2:#2F3A46; --line:rgba(190,205,222,.18);
+  --steel:#5D6875; --steel-top:#6E7A88; --ink:#F2F5F8; --muted:#A9B5C3;
+  --yellow:#FFC531; --teal:#19B3A4; --red:#EF4D4D; --green:#3CC37A;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Barlow','Segoe UI',Arial,sans-serif;
+}
+[hidden]{display:none!important}
+html{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--floor);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none}
+.vp{position:relative;height:100%;box-sizing:border-box;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:hidden}
+.stage{position:absolute;left:50%;top:50%;width:1280px;height:800px;transform-origin:center;background:var(--floor);border-radius:14px;overflow:hidden;outline:1px solid var(--line)}
+button{font-family:var(--body);cursor:pointer}
+button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+.top{position:absolute;left:0;top:0;width:1280px;height:72px;box-sizing:border-box;padding:0 20px;display:flex;align-items:center;gap:18px;background:#141920;border-bottom:4px solid var(--yellow)}
+.brand{display:flex;align-items:center;gap:10px;min-width:220px}
+.brand b{font:800 26px/1 var(--display);letter-spacing:.02em}
+.brand span{display:block;font:600 14px/1.1 var(--body);color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.chips{flex:1;display:flex;gap:6px;justify-content:center}
+.chip{font:700 15px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;padding:8px 12px;border-radius:6px;background:var(--panel);color:var(--muted)}
+.chip.on{background:var(--yellow);color:#1A1405}
+.chip.done{background:#24413A;color:#9FE6CF}
+.clock{font:700 34px/1 var(--display);font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
+.reset{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:600;font-size:14px;padding:9px 12px;border-radius:8px}
+.reset.arm{background:var(--red);color:#fff;border-color:var(--red)}
+
+.scene{position:absolute;left:0;top:72px;width:1280px;height:728px;touch-action:none}
+.drag{cursor:grab}
+.lift{filter:drop-shadow(0 14px 14px rgba(0,0,0,.45));cursor:grabbing}
+.bench{position:absolute;border-radius:14px;background:linear-gradient(180deg,var(--steel-top),var(--steel));box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.bench::before{content:"";position:absolute;inset:-10px;border-radius:20px;background:repeating-linear-gradient(135deg,var(--yellow) 0 18px,#1B1F24 18px 36px);z-index:-1}
+.panel{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-sizing:border-box}
+.ptitle{margin:0;font:700 20px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+div.ptitle{position:absolute}
+.next{position:absolute;right:24px;bottom:22px;z-index:900;border:0;background:var(--yellow);color:#1A1405;font:800 26px/1 var(--display);letter-spacing:.03em;padding:16px 26px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.toast{pointer-events:none;position:absolute;left:50%;top:86px;transform:translateX(-50%);z-index:950;max-width:760px;background:#0F1318;border:2px solid var(--teal);color:var(--ink);font:600 20px/1.35 var(--body);padding:14px 20px;border-radius:10px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.toast.bad{border-color:var(--red)}
+.toast.good{border-color:var(--green)}
+
+.overlay{position:absolute;inset:0;z-index:1000;background:rgba(10,13,17,.72);display:grid;place-items:center}
+.card{width:720px;background:var(--panel);border:1px solid var(--line);border-top:8px solid var(--yellow);border-radius:14px;padding:34px 40px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
+.card .k{margin:0;font:700 18px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--yellow)}
+.card h2{margin:0;font:800 52px/1 var(--display);letter-spacing:.01em}
+.card p{margin:0;font-size:23px;line-height:1.45;color:#D6DEE7}
+.card .go{align-self:flex-start;border:0;background:var(--yellow);color:#1A1405;font:800 26px/1 var(--display);padding:15px 28px;border-radius:10px;margin-top:6px}
+.card .tip{font-size:18px;color:var(--muted);border-left:4px solid var(--teal);padding-left:14px}
+
+.zone{position:absolute;border:3px dashed rgba(255,255,255,.28);border-radius:14px;box-sizing:border-box}
+.zone .zl{position:absolute;left:0;right:0;top:12px;text-align:center;font:800 26px/1 var(--display);letter-spacing:.06em}
+.zone.keep{border-color:var(--green);background:rgba(60,195,122,.08)}
+.zone.keep .zl{color:#8FF0C4}
+.zone.redtag{border-color:var(--red);background:rgba(239,77,77,.08)}
+.zone.redtag .zl{color:#FF9C9C}
+.locked{pointer-events:none}
+
+/* Tablero del cronometrista */
+.crono{left:24px;top:20px;width:300px;height:688px;padding:18px}
+.crono h3{margin:6px 0 0;font:800 22px/1.1 var(--display);color:var(--ink)}
+.crow{display:grid;grid-template-columns:1fr auto;gap:2px 8px;background:var(--panel2);border-radius:10px;padding:10px 12px;margin-top:10px}
+.crow b{font:800 20px/1.1 var(--display)}
+.crow span{font:800 26px/1 var(--display);text-align:right;font-variant-numeric:tabular-nums;grid-row:span 2;align-self:center}
+.crow small{font:600 14px/1.2 var(--body);color:var(--muted)}
+.crow.now{outline:3px solid var(--yellow)}
+.crow.bad small{color:#FF9C9C}
+.crow.ok small{color:#8FF0C4}
+.vari{margin-top:14px;background:#0F1318;border-radius:10px;padding:12px 14px;font:600 15px/1.35 var(--body);color:var(--muted)}
+.vari b{display:block;font:800 30px/1 var(--display);color:var(--yellow);margin-top:4px}
+
+/* Banco de ensamble */
+.ws{left:344px;top:20px;width:600px;height:450px}
+.who{position:absolute;left:18px;top:14px;font:800 22px/1 var(--display);letter-spacing:.04em;color:#fff;background:rgba(15,19,24,.75);padding:8px 12px;border-radius:8px}
+.chair{position:absolute;left:180px;top:60px;width:240px;height:300px}
+.chair svg{width:100%;height:100%}
+.tq{position:absolute;left:40px;right:40px;bottom:22px;height:64px;border-radius:10px;background:rgba(15,19,24,.85);padding:10px 14px;box-sizing:border-box}
+.tq small{display:block;font:700 14px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:#E1E7EE}
+.tq .rail{position:absolute;left:14px;right:14px;bottom:10px;height:20px;border-radius:6px;background:#2A323B;overflow:hidden}
+.tq .rail i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--teal)}
+.tq .rail u{position:absolute;top:0;bottom:0;background:rgba(60,195,122,.35);border-left:2px solid var(--green);border-right:2px solid var(--green)}
+.tq .rail em{position:absolute;right:6px;top:1px;font:800 14px/18px var(--display);font-style:normal;color:#FF9C9C}
+
+/* Operaciones */
+.ops{left:344px;top:490px;width:600px;height:218px;padding:14px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:10px}
+.optile{position:relative;overflow:hidden;border:0;border-radius:12px;background:#E9EDF1;color:#1A2028;font:800 20px/1.1 var(--display);box-shadow:0 5px 0 #B8C1CB;touch-action:none;padding:6px 10px;text-align:left;display:flex;align-items:center;gap:10px}
+.optile i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(60,195,122,.55)}
+.optile span{position:relative}
+.optile b{position:relative;flex:none;width:34px;height:34px;border-radius:8px;background:#1A2028;color:var(--yellow);display:grid;place-items:center;font:800 20px/1 var(--display)}
+.optile.done{background:#1F4436;color:#8FF0C4;box-shadow:0 5px 0 #143126}
+.optile.done b{background:#143126;color:#8FF0C4}
+.optile.cur{outline:4px solid var(--yellow);outline-offset:2px}
+.optile.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* Hoja estándar */
+.side{left:964px;top:20px;width:292px;height:688px;padding:18px}
+.side p{margin:10px 0 0;font:600 17px/1.4 var(--body);color:#D6DEE7}
+.side .none{margin-top:40px;text-align:center;font:800 30px/1.1 var(--display);color:var(--muted)}
+.sheetmini{margin-top:10px;display:flex;flex-direction:column;gap:6px}
+.sheetmini div{background:#F4F1E8;color:#1A2028;border-radius:8px;padding:8px 10px;font:700 15px/1.25 var(--body);border-left:6px solid #B8B2A2}
+.sheetmini div.now{border-left-color:var(--yellow);box-shadow:0 0 0 3px var(--yellow)}
+.sheetmini div.done{opacity:.5}
+.sheetmini div small{display:block;font:600 13px/1.3 var(--body);color:#9B5B00;margin-top:3px}
+.hoja{left:24px;top:20px;width:720px;height:688px;padding:0;background:#F4F1E8;border:0}
+.hoja .hh{position:absolute;left:22px;right:22px;top:16px;font:800 26px/1 var(--display);letter-spacing:.03em;color:#1A2028;border-bottom:3px solid #1A2028;padding-bottom:10px}
+.hoja .hs{position:absolute;left:22px;right:22px;top:58px;font:600 15px/1.2 var(--body);color:#4A5562}
+.srow{position:absolute;left:22px;right:22px;height:88px;border-radius:10px;border:3px dashed #B8B2A2;box-sizing:border-box;display:grid;grid-template-columns:52px 1fr 1fr;align-items:center;gap:10px;padding:0 10px}
+.srow .no{width:44px;height:44px;border-radius:8px;background:#1A2028;color:var(--yellow);display:grid;place-items:center;font:800 26px/1 var(--display)}
+.srow .st{font:700 19px/1.2 var(--body);color:#8A8577}
+.srow .kp{font:600 15px/1.25 var(--body);color:#9B5B00;border-left:3px solid #E3D9BF;padding-left:10px;min-height:20px}
+.srow.fill{border-style:solid;border-color:#1A2028}
+.srow.fill .st{color:#1A2028}
+.scard{position:absolute;width:250px;min-height:62px;box-sizing:border-box;background:#E9EDF1;border-radius:10px;padding:10px 14px;color:#1A2028;box-shadow:0 4px 0 #B8C1CB;touch-action:none;font:700 18px/1.2 var(--body);display:flex;align-items:center}
+.scard.kp{background:#FFE7A8;box-shadow:0 4px 0 #C9A44A;font-size:16px}
+.pick{left:764px;top:20px;width:492px;height:688px;padding:18px}
+
+/* Intro */
+.roster{left:760px;top:44px;width:470px;padding:24px 26px;display:flex;flex-direction:column;gap:10px}
+.roster h2{margin:0;font:800 32px/1 var(--display)}
+.roster p{margin:0;font-size:17px;line-height:1.4;color:var(--muted)}
+.prow{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;background:var(--panel2);border-radius:12px;padding:10px 14px}
+.prow label{font:800 20px/1 var(--display);letter-spacing:.04em;color:var(--yellow)}
+.prow input{width:100%;box-sizing:border-box;font:600 20px/1 var(--body);padding:9px 12px;border-radius:8px;border:2px solid var(--line);background:#1B2129;color:var(--ink)}
+.rolesx{font:600 15px/1.4 var(--body);color:#D6DEE7;background:#0F1318;border-radius:10px;padding:12px 14px}
+.rolesx b{color:var(--yellow)}
+
+/* Resultados */
+.tt{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:6px 10px;font:600 18px/1.2 var(--body);align-items:center}
+.tt .h{font:700 13px/1.1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+.tt b{font:800 24px/1 var(--display);text-align:center;padding:7px 0;border-radius:6px;background:var(--panel2)}
+.tt b.bad{background:#5A2323;color:#FFB0B0}
+.tt b.ok{background:#1F4436;color:#8FF0C4}
+/* Intro y resultados */
+.intro{position:absolute;left:60px;top:44px;width:640px;display:flex;flex-direction:column;gap:18px}
+.intro .k{margin:0;font:700 20px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
+.intro h1{margin:0;font:800 68px/.92 var(--display);text-transform:uppercase;letter-spacing:.005em}
+.intro p{margin:0;font-size:23px;line-height:1.45;color:#D6DEE7}
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.steps div{background:var(--panel);border-radius:10px;padding:12px 14px;font-size:18px;line-height:1.3;color:var(--muted)}
+.steps b{display:block;font:800 22px/1.1 var(--display);color:var(--ink);letter-spacing:.02em}
+.bigbtn{align-self:flex-start;border:0;background:var(--yellow);color:#1A1405;font:800 32px/1 var(--display);padding:18px 34px;border-radius:12px;margin-top:6px;box-shadow:0 6px 0 #B8890B}
+.pile{position:absolute;display:flex;flex-wrap:wrap;gap:2px}
+.pile i{width:40px;height:46px;display:block}
+.pile i svg{width:100%;height:100%}
+.bubble{position:absolute;background:#fff;color:#1A2028;border-radius:14px;padding:12px 16px;font:700 20px/1.25 var(--body);box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.bubble::after{content:"";position:absolute;left:30px;bottom:-14px;border:8px solid transparent;border-top:8px solid #fff;border-left:8px solid #fff}
+.res-l{left:30px;top:24px;width:640px;height:680px;padding:28px 32px;display:flex;flex-direction:column;gap:16px}
+.res-r{left:690px;top:24px;width:560px;height:680px;padding:28px 32px;display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:120px 1fr 90px;align-items:center;gap:14px;font:700 24px/1 var(--display)}
+.bar .t{height:40px;border-radius:6px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.bar .t i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.learn{margin:0;padding-left:22px;font-size:19px;line-height:1.4;color:#D6DEE7;display:flex;flex-direction:column;gap:6px}
+.pts{display:grid;grid-template-columns:1fr auto;font-size:20px;row-gap:10px;column-gap:16px}
+.pts span:nth-child(even){font:800 24px/1 var(--display);text-align:right;font-variant-numeric:tabular-nums}
+.pts .tot{font:800 30px/1 var(--display);border-top:2px solid var(--line);padding-top:12px}
+.code{margin-top:auto;background:var(--yellow);color:#1A1405;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.code span{font:700 16px/1.2 var(--body)}
+.code b{font:800 50px/1 var(--display);letter-spacing:.06em}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Tabla de resultados (común a las 7 mesas) */
+.tr-ov{position:absolute;left:0;top:76px;width:1280px;height:724px;z-index:1100;background:var(--floor);display:flex;gap:20px;padding:22px 24px;box-sizing:border-box;font-family:var(--body);color:var(--ink)}
+.tr-l,.tr-r{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px}
+.tr-l{width:500px;flex:none}
+.tr-r{flex:1;min-width:0}
+.tr-k{margin:0;font:700 18px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--yellow)}
+.tr-l h2{margin:0;font:800 44px/1 var(--display)}
+.tr-row{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:center;background:var(--panel2);border-radius:12px;padding:12px 14px}
+.tr-row input{width:100%;box-sizing:border-box;font:600 22px/1 var(--body);padding:12px;border-radius:8px;border:2px solid var(--line);background:#141920;color:var(--ink)}
+.tr-row input:focus{outline:3px solid var(--yellow);outline-offset:1px}
+.tr-row .cal{text-align:center;background:var(--yellow);color:#1A1405;border-radius:10px;padding:8px 0}
+.tr-row .cal b{display:block;font:800 46px/1 var(--display)}
+.tr-row .cal small{display:block;font:700 13px/1.2 var(--body)}
+.tr-row .det{grid-column:1/-1;font:600 15px/1.2 var(--body);color:var(--muted)}
+.tr-l button{border:0;border-radius:10px;font:800 26px/1 var(--display);padding:16px 22px;cursor:pointer}
+.tr-save{background:var(--yellow);color:#1A1405;box-shadow:0 6px 0 #B8890B}
+.tr-save:disabled{background:#2F4A44;color:#9FE6CF;box-shadow:none;cursor:default}
+.tr-note{margin:0;font:600 16px/1.4 var(--body);color:var(--muted)}
+.tr-note.warn{color:#FF9C9C}
+.tr-btns{margin-top:auto;display:flex;gap:10px}
+.tr-btns .tr-next{flex:1;background:var(--panel2);color:var(--ink);border:1px solid var(--line)!important}
+.tr-btns .tr-next.go{background:var(--green);color:#06231A}
+.tr-btns .tr-clear{background:none;color:var(--muted);border:1px solid var(--line)!important;font-size:18px!important}
+.tr-btns .tr-clear.arm{background:var(--red);color:#fff}
+.tr-head,.tr-item{display:grid;grid-template-columns:64px 1fr 150px;align-items:center;gap:12px}
+.tr-head{font:700 14px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 14px}
+.tr-head span:last-child{text-align:center}
+.tr-list{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.tr-item{background:var(--panel2);border-radius:10px;padding:8px 14px;min-height:46px}
+.tr-item .rk{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:800 24px/1 var(--display);background:#1B2129;color:var(--muted)}
+.tr-item.p1 .rk{background:#FFC531;color:#1A1405}
+.tr-item.p2 .rk{background:#C9D1D9;color:#1A2028}
+.tr-item.p3 .rk{background:#C8955A;color:#1A1405}
+.tr-item .nm b{display:block;font:800 24px/1.1 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-item .nm small{display:block;font:600 14px/1.2 var(--body);color:var(--muted)}
+.tr-item .cv{text-align:center;font:800 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.tr-item .cv small{font-size:20px;color:var(--muted)}
+.tr-item.new{outline:3px solid var(--green);background:#1F4436}
+.tr-empty{padding:30px 0;text-align:center;font:600 20px/1.4 var(--body);color:var(--muted)}
+</style>
+
+<div class="vp" id="vp">
+  <div class="stage" id="stage">
+    <header class="top">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="#FFC531"/><path d="M13 9h14v12H13zM11 21h18v4H11zM19 25v6M12 34l7-3 7 3" stroke="#1A1405" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><b>ErgoSilla</b><span>Mesa 7 · Estándar</span></div>
+      </div>
+      <nav class="chips" id="chips" aria-label="Pasos"></nav>
+      <div class="clock" id="clock" aria-live="off">0.0 s</div>
+      <button class="reset" id="reset">Reiniciar mesa</button>
+    </header>
+    <main class="scene" id="scene"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+/* ---------- Escenario y utilidades (igual que Mesa 1) ---------- */
+const vp=document.getElementById('vp'), stage=document.getElementById('stage'), scene=document.getElementById('scene');
+let S=1, Z=10, VIEW=0;
+function fit(){
+  const cs=getComputedStyle(vp);
+  const w=vp.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const h=vp.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  S=Math.min(w/1280,h/800); if(!(S>0)) S=.3;
+  stage.style.transform='translate(-50%,-50%) scale('+S+')';
+}
+window.addEventListener('resize',fit); fit();
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(a,seed){const r=rng(seed); return a.slice().sort(()=>r()-.5);}
+function mk(cls,html,box,parent){
+  const d=document.createElement('div'); d.className=cls; if(html) d.innerHTML=html;
+  if(box){ if(box.x!=null)d.style.left=box.x+'px'; if(box.y!=null)d.style.top=box.y+'px'; if(box.w!=null)d.style.width=box.w+'px'; if(box.h!=null)d.style.height=box.h+'px'; }
+  (parent||scene).appendChild(d); return d;
+}
+function btn(cls,text,box,parent){const b=document.createElement('button'); b.className=cls; b.textContent=text; if(box){b.style.left=box.x+'px'; b.style.top=box.y+'px';} (parent||scene).appendChild(b); return b;}
+function hit(x,y,list){return list.find(z=>{const r=z.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;});}
+function draggable(d,onDrop){
+  d.classList.add('drag');
+  d.addEventListener('pointerdown',e=>{
+    if(d.classList.contains('locked')) return;
+    e.preventDefault(); e.stopPropagation();
+    try{d.setPointerCapture(e.pointerId);}catch(_){}
+    const sx=e.clientX, sy=e.clientY, ox=parseFloat(d.style.left)||0, oy=parseFloat(d.style.top)||0;
+    let moved=false; d.style.zIndex=++Z; d.style.transition='none'; d.classList.add('lift');
+    const mv=ev=>{const dx=(ev.clientX-sx)/S, dy=(ev.clientY-sy)/S; if(Math.abs(dx)+Math.abs(dy)>6) moved=true; if(moved){d.style.left=(ox+dx)+'px'; d.style.top=(oy+dy)+'px';}};
+    const up=ev=>{
+      d.removeEventListener('pointermove',mv); d.removeEventListener('pointerup',up); d.removeEventListener('pointercancel',up);
+      d.classList.remove('lift'); d.style.transition='';
+      let ok=true; if(onDrop) ok=onDrop(ev.clientX,ev.clientY,moved)!==false;
+      if(!ok){ d.style.transition='left .25s ease, top .25s ease'; d.style.left=ox+'px'; d.style.top=oy+'px'; }
+    };
+    d.addEventListener('pointermove',mv); d.addEventListener('pointerup',up); d.addEventListener('pointercancel',up);
+  });
+}
+let toastT=null;
+function toast(msg,kind){
+  const old=stage.querySelector('.toast'); if(old) old.remove();
+  const t=document.createElement('div'); t.className='toast'+(kind?' '+kind:''); t.textContent=msg; stage.appendChild(t);
+  clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),3600);
+}
+function nextBtn(label,fn){
+  const old=scene.querySelector('.next'); if(old) old.remove();
+  const b=document.createElement('button'); b.className='next'; b.textContent=label; b.addEventListener('click',fn); scene.appendChild(b); return b;
+}
+function cardOverlay(k,title,text,btnTxt,cb,tip){
+  const o=mk('overlay','<div class="card"><p class="k"></p><h2></h2><p class="t"></p>'+(tip?'<p class="tip"></p>':'')+'<button class="go"></button></div>');
+  o.querySelector('.k').textContent=k; o.querySelector('h2').textContent=title; o.querySelector('.t').textContent=text; o.querySelector('.go').textContent=btnTxt;
+  if(tip) o.querySelector('.tip').textContent=tip;
+  o.querySelector('.go').addEventListener('click',()=>{o.remove(); if(cb) cb();});
+}
+
+/* ---------- Datos ---------- */
+const OPS=[
+  {id:'base',n:'Colocar base y rodajas',pre:[],why:''},
+  {id:'piston',n:'Insertar el pistón',pre:['base'],why:'Sin la base no hay dónde insertar el pistón.'},
+  {id:'asiento',n:'Montar el asiento',pre:['piston'],why:'El asiento va sobre el pistón: primero el pistón.'},
+  {id:'respaldo',n:'Montar el respaldo',pre:['asiento'],why:'El respaldo se atornilla al asiento: primero el asiento.'},
+  {id:'brazos',n:'Atornillar los brazos',pre:['asiento','respaldo'],why:'Los brazos unen asiento y respaldo: primero monta los dos.',torque:true},
+  {id:'revisar',n:'Revisar y etiquetar',pre:['base','piston','asiento','respaldo','brazos'],why:'Se revisa la silla terminada: todavía faltan pasos.'}
+];
+const NAME=Object.fromEntries(OPS.map(o=>[o.id,o.n]));
+const KEYPTS=[
+  {n:'Empujar el pistón hasta escuchar el clic',op:'piston'},
+  {n:'Apretar hasta la zona verde: ni flojo ni barrido',op:'brazos'},
+  {n:'Contar las 5 rodajas antes de etiquetar',op:'revisar'}
+];
+const CHAIRS=3, HOLD=650, PENALTY=3, TQ_T=2000, TQ_LO=.55, TQ_HI=.75;
+function chairSVG(done){
+  const h=k=>done.includes(k);
+  const g='fill="none" stroke="rgba(255,255,255,.4)" stroke-width="2" stroke-dasharray="5 5"';
+  let s='<svg viewBox="0 0 240 300">';
+  s+=h('base')?'<path d="M40 262H200M60 282l60-20 60 20" stroke="#AEB8C2" stroke-width="10" fill="none" stroke-linecap="round"/><circle cx="42" cy="282" r="12" fill="#1E2328"/><circle cx="120" cy="286" r="12" fill="#1E2328"/><circle cx="198" cy="282" r="12" fill="#1E2328"/>':'<path d="M40 262H200" '+g+'/>';
+  s+=h('piston')?'<rect x="108" y="168" width="24" height="94" rx="5" fill="#1E2328"/><rect x="113" y="150" width="14" height="30" rx="3" fill="#C9D1D9"/>':'<rect x="108" y="168" width="24" height="94" rx="5" '+g+'/>';
+  s+=h('asiento')?'<rect x="38" y="130" width="164" height="30" rx="14" fill="#2E6FD6"/>':'<rect x="38" y="130" width="164" height="30" rx="14" '+g+'/>';
+  s+=h('respaldo')?'<rect x="150" y="10" width="54" height="118" rx="20" fill="#2E6FD6"/><rect x="170" y="120" width="14" height="20" fill="#1E2328"/>':'<rect x="150" y="10" width="54" height="118" rx="20" '+g+'/>';
+  s+=h('brazos')?'<path d="M50 128V92h62" stroke="#1E2328" stroke-width="12" fill="none" stroke-linecap="round"/>':'<path d="M50 128V92h62" '+g+'/>';
+  if(h('revisar')) s+='<rect x="64" y="186" width="34" height="22" rx="3" fill="#FFC531"/><path d="M71 197l5 5 10-10" stroke="#1A1405" stroke-width="3" fill="none"/>';
+  return s+'</svg>';
+}
+
+/* ---------- Estado, reloj y pasos ---------- */
+const STEPS=[['r1','1 · A su manera'],['hoja','2 · Hoja estándar'],['r2','3 · Con estándar'],['resultado','Resultado']];
+let st;
+const clockEl=document.getElementById('clock');
+function fmt1(s){return s.toFixed(1)+' s';}
+function chips(cur){
+  const c=document.getElementById('chips'); c.innerHTML='';
+  const idx=STEPS.findIndex(s=>s[0]===cur);
+  STEPS.forEach((s,i)=>{const d=document.createElement('span'); d.className='chip'+(i===idx?' on':(idx>i?' done':'')); d.textContent=s[1]; c.appendChild(d);});
+}
+function go(step){ VIEW++; scene.innerHTML=''; Z=10; const t=stage.querySelector('.toast'); if(t) t.remove(); chips(step); VIEWS[step](); }
+function opName(i){const n=st.names.filter(x=>x); return n.length?n[i%n.length]:('Operario '+(i+1));}
+function reset(){
+  VIEW++; clockEl.textContent='0.0 s';
+  st={names:st&&st.names||['','',''],r1:null,r2:null,err:{seq:0,key:0}};
+  go('intro');
+}
+
+/* ---------- Una ronda: 3 sillas, una por operario ---------- */
+function Round(std,onEnd){
+  const myView=VIEW;
+  const res=[]; let ci=0, cur=null;
+  const cr=mk('panel crono','<p class="ptitle">Cronometrista</p><h3>Tiempos por silla</h3><div class="rows"></div><div class="vari">Variación (más lenta − más rápida)<b>—</b></div>');
+  const rowsEl=cr.querySelector('.rows'), variB=cr.querySelector('.vari b');
+  const rows=[]; for(let i=0;i<CHAIRS;i++){ const r=mk('crow','<b></b><span>—</span><small>Pendiente</small>',null,rowsEl); r.querySelector('b').textContent='Silla '+(i+1)+' · '+opName(i); rows.push(r); }
+  const ws=mk('bench ws','<div class="who"></div><div class="chair"></div>');
+  const whoEl=ws.querySelector('.who'), chairEl=ws.querySelector('.chair');
+  const tq=mk('tq','<small>Torque de los brazos · mantén presionado y suelta</small><div class="rail"><i></i>'+(std?'<u></u>':'')+'<em>barrido</em></div>',null,ws); tq.hidden=true;
+  if(std){ const u=tq.querySelector('u'); u.style.left=(TQ_LO*100)+'%'; u.style.width=((TQ_HI-TQ_LO)*100)+'%'; }
+  const opsP=mk('panel ops','');
+  const side=mk('panel side','<p class="ptitle">'+(std?'Hoja de trabajo estándar':'Instrucciones')+'</p>');
+  let sideList=null;
+  if(!std) side.insertAdjacentHTML('beforeend','<div class="none">No hay.</div><p>Cada quien arma la silla como cree que se hace. Nadie dice el orden ni cuánto apretar los brazos.</p><p style="color:var(--muted)">Cronometrista: lean en voz alta el tiempo de cada silla.</p>');
+  else { sideList=mk('sheetmini','',null,side); OPS.forEach((o,i)=>{const kp=KEYPTS.find(k=>k.op===o.id); const d=mk('','',null,sideList); d.textContent=(i+1)+'. '+o.n; if(kp){const s=document.createElement('small'); s.textContent='Punto clave: '+kp.n; d.appendChild(s);} }); side.insertAdjacentHTML('beforeend','<p style="color:var(--muted)">Supervisor: verifiquen que el operario siga la hoja.</p>'); }
+
+  function startChair(){
+    cur={done:[],t0:0,pen:0,errs:0,defect:null,hold:null,running:false};
+    rows.forEach((r,i)=>r.classList.toggle('now',i===ci));
+    whoEl.textContent='Silla '+(ci+1)+' de '+CHAIRS+' · '+opName(ci);
+    chairEl.innerHTML=chairSVG([]); tq.hidden=true;
+    drawOps();
+    cardOverlay('Silla '+(ci+1)+' de '+CHAIRS,'Turno de '+opName(ci),std?'Sigan la hoja estándar de la derecha: el paso que toca está marcado. En los brazos, suelten cuando la barra esté en la zona verde.':'Armen la silla tocando y manteniendo presionada cada operación. Ustedes deciden el orden.','¡Empezar!',()=>{cur.running=true; cur.t0=performance.now(); requestAnimationFrame(frame);},ci===0?(std?'Cronometrista: comparen con los tiempos de la ronda 1.':'Si hacen un paso antes de tiempo, tendrán que desarmar: +3 segundos.'):null);
+  }
+  let order=OPS.slice();
+  function drawOps(){
+    opsP.innerHTML='';
+    order=std?OPS.slice():shuffle(OPS,ci*31+7+(st.r1?100:0));
+    order.forEach(o=>{
+      const b=document.createElement('button'); b.className='optile'; b.innerHTML='<i></i>'+(std?'<b>'+(OPS.indexOf(o)+1)+'</b>':'')+'<span></span>'; b.querySelector('span').textContent=o.n; opsP.appendChild(b);
+      if(cur.done.includes(o.id)) b.classList.add('done');
+      if(std && !cur.done.includes(o.id) && OPS.filter(x=>!cur.done.includes(x.id))[0]===o) b.classList.add('cur');
+      b.addEventListener('pointerdown',e=>{
+        e.preventDefault(); if(!cur.running||cur.hold||cur.done.includes(o.id)) return;
+        const miss=o.pre.filter(p=>!cur.done.includes(p));
+        if(miss.length){ cur.pen+=PENALTY; cur.errs++; b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake'); toast('Tuvieron que desarmar: '+o.why+' +3 s','bad'); return; }
+        try{b.setPointerCapture(e.pointerId);}catch(_){}
+        cur.hold={o:o,b:b,t0:performance.now()};
+        if(o.torque){ tq.hidden=false; tq.querySelector('i').style.width='0'; }
+      });
+      const up=()=>{ if(!cur.hold||cur.hold.b!==b) return; const h=cur.hold;
+        if(h.o.torque){ const p=(performance.now()-h.t0)/TQ_T; finishTorque(p); }
+        else { b.querySelector('i').style.width='0'; cur.hold=null; } };
+      b.addEventListener('pointerup',up); b.addEventListener('pointercancel',up);
+    });
+    if(sideList) [...sideList.children].forEach((d,i)=>{ const id=OPS[i].id; d.className=cur.done.includes(id)?'done':(OPS.filter(x=>!cur.done.includes(x.id))[0]===OPS[i]?'now':''); });
+  }
+  function finishTorque(p){
+    const h=cur.hold; cur.hold=null; tq.querySelector('i').style.width=Math.min(100,p*100)+'%';
+    if(p<TQ_LO){ cur.defect='Brazos flojos'; toast('Quedó flojo: el brazo se va a mover con el uso.','bad'); }
+    else if(p>TQ_HI){ cur.defect='Tornillo barrido'; toast('Se apretó de más: el tornillo quedó barrido.','bad'); }
+    else toast('Torque correcto.','good');
+    setTimeout(()=>{tq.hidden=true;},700);
+    complete(h.o);
+  }
+  function complete(o){
+    cur.done.push(o.id); chairEl.innerHTML=chairSVG(cur.done); drawOps();
+    if(cur.done.length===OPS.length){
+      cur.running=false;
+      const t=(performance.now()-cur.t0)/1000+cur.pen;
+      res.push({op:opName(ci),t:t,errs:cur.errs,defect:cur.defect});
+      const r=rows[ci]; r.querySelector('span').textContent=fmt1(t); r.querySelector('small').textContent=cur.defect?('Defecto: '+cur.defect):(cur.errs?cur.errs+' veces desarmó':'Sin defectos'); r.classList.add(cur.defect?'bad':'ok');
+      if(res.length>1){ const ts=res.map(x=>x.t); variB.textContent=fmt1(Math.max(...ts)-Math.min(...ts)); }
+      clockEl.textContent=fmt1(t);
+      ci++;
+      if(ci<CHAIRS) setTimeout(()=>{ if(VIEW===myView) startChair(); },900);
+      else setTimeout(()=>{ if(VIEW===myView){ rows.forEach(r=>r.classList.remove('now')); onEnd(res); } },700);
+    }
+  }
+  function frame(now){
+    if(VIEW!==myView||!cur||!cur.running) return;
+    clockEl.textContent=fmt1((now-cur.t0)/1000+cur.pen);
+    if(cur.hold){ const h=cur.hold;
+      if(h.o.torque){ const p=(now-h.t0)/TQ_T; tq.querySelector('i').style.width=Math.min(100,p*100)+'%'; if(p>=1){ finishTorque(1.01); } }
+      else { const p=(now-h.t0)/HOLD; h.b.querySelector('i').style.width=Math.min(100,p*100)+'%'; if(p>=1){ cur.hold=null; complete(h.o); } } }
+    requestAnimationFrame(frame);
+  }
+  startChair();
+}
+function sumR(res){const ts=res.map(x=>x.t); return {res:res,avg:ts.reduce((a,b)=>a+b,0)/ts.length,range:Math.max(...ts)-Math.min(...ts),defects:res.filter(x=>x.defect).length,errs:res.reduce((a,x)=>a+x.errs,0)};}
+
+/* ---------- Vistas ---------- */
+const VIEWS={};
+VIEWS.intro=function(){
+  chips('');
+  const w=mk('intro','<p class="k">ErgoSilla · Ensamble final · Mesa 7</p><h1>Trabajo<br>estandarizado</h1><p>Cada operario arma la silla a su manera: unos tardan el doble que otros y algunas sillas salen con los brazos flojos. Hoy van a crear la hoja de trabajo estándar y comprobar que todos lo hacen igual, mejor y más rápido.</p>'+
+    '<div class="steps"><div><b>1. A su manera</b>3 sillas, sin instrucciones, con cronómetro.</div><div><b>2. Hoja estándar</b>Ordenen los pasos y pongan los puntos clave.</div><div><b>3. Con estándar</b>Las mismas 3 sillas siguiendo la hoja.</div><div><b>4. Resultado</b>Tiempo, variación entre operarios y defectos.</div></div>'+
+    '<button class="bigbtn" id="start">Empezar la ronda 1</button>');
+  w.querySelector('#start').addEventListener('click',()=>go('r1'));
+  const r=mk('panel roster','<h2>¿Quién arma cada silla?</h2><p>Se arman 3 sillas por ronda y se turnan. Si son menos de 3, repiten turno.</p>');
+  for(let i=0;i<3;i++){ const row=mk('prow','<label></label><input maxlength="16" autocomplete="off">',null,r); row.querySelector('label').textContent='Operario '+(i+1); const inp=row.querySelector('input'); inp.placeholder='Nombre (opcional)'; inp.value=st.names[i]; inp.addEventListener('input',()=>{st.names[i]=inp.value.trim();}); }
+  mk('rolesx','<b>Cronometrista:</b> lee en voz alta el tiempo de cada silla.<br><b>Supervisor de calidad:</b> vigila el torque de los brazos y que se siga la hoja.<br>Los que no arman, ayudan a decidir la hoja estándar.',null,r);
+};
+
+VIEWS.r1=function(){
+  Round(false,res=>{ st.r1=sumR(res); toast('Ronda 1: promedio '+fmt1(st.r1.avg)+', variación '+fmt1(st.r1.range)+' y '+st.r1.defects+' sillas con defecto.','bad'); nextBtn('Crear la hoja estándar →',()=>go('hoja')); });
+};
+
+VIEWS.hoja=function(){
+  clockEl.textContent='—';
+  const H=mk('panel hoja','<div class="hh">HOJA DE TRABAJO ESTÁNDAR · SILLA E-3</div><div class="hs">Secuencia de operaciones y puntos clave de calidad</div>');
+  const slots=OPS.map((o,i)=>{ const r=mk('srow','<div class="no">'+(i+1)+'</div><div class="st">Arrastra aquí el paso '+(i+1)+'</div><div class="kp"></div>',{y:92+i*98},H); r.dataset.i=i; return r; });
+  const P=mk('panel pick','<p class="ptitle">Pasos de la operación</p>');
+  let placed=0, kplaced=0;
+  shuffle(OPS,77).forEach((o,i)=>{
+    const c=mk('scard','',{x:794,y:66+i*84}); c.textContent=o.n; c.style.zIndex=++Z;
+    draggable(c,(x,y)=>{
+      const s=hit(x,y,slots); if(!s) return false;
+      const i=+s.dataset.i;
+      if(s.classList.contains('fill')) return false;
+      if(OPS[i]!==o){ st.err.seq++; toast(OPS.indexOf(o)>i?o.why:('"'+o.n+'" tiene que ir antes en la secuencia.'),'bad'); return false; }
+      s.classList.add('fill'); s.querySelector('.st').textContent=o.n; c.remove();
+      if(++placed===OPS.length) keyPhase();
+    });
+  });
+  function keyPhase(){
+    toast('Secuencia lista. Ahora pongan los puntos clave: lo que asegura la calidad en cada paso.','good');
+    P.querySelector('.ptitle').textContent='Puntos clave';
+    KEYPTS.forEach((k,i)=>{
+      const c=mk('scard kp','',{x:794,y:66+i*96}); c.textContent=k.n; c.style.zIndex=++Z;
+      draggable(c,(x,y)=>{
+        const s=hit(x,y,slots); if(!s) return false;
+        const op=OPS[+s.dataset.i].id;
+        if(op!==k.op){ st.err.key++; toast('Ese punto clave no corresponde a "'+NAME[op]+'". Piensen en qué paso se puede cometer ese error.','bad'); return false; }
+        s.querySelector('.kp').textContent='Punto clave: '+k.n; c.remove();
+        if(++kplaced===KEYPTS.length){ toast('Hoja de trabajo estándar lista. Ahora todos la siguen.','good'); nextBtn('Ronda 2 con estándar →',()=>go('r2')); }
+      });
+    });
+  }
+  cardOverlay('Paso 2 · Hoja de trabajo estándar','La mejor forma conocida','Discutan en equipo cuál fue el mejor orden. Arrastren cada paso a su número en la hoja. Después agreguen los puntos clave de calidad.','Empezar',null,'El estándar no es la forma de una persona: es la mejor forma que el equipo conoce hoy, y se mejora con el tiempo.');
+};
+
+VIEWS.r2=function(){
+  Round(true,res=>{ st.r2=sumR(res); toast('Ronda 2: promedio '+fmt1(st.r2.avg)+' y variación '+fmt1(st.r2.range)+'.','good'); nextBtn('Ver resultados →',()=>go('resultado')); });
+};
+
+VIEWS.resultado=function(){
+  const a=st.r1, b=st.r2, cl=(v)=>Math.max(0,Math.min(1,v));
+  const pSeq=Math.max(0,20-3*st.err.seq), pKey=Math.max(0,15-3*st.err.key);
+  const good=CHAIRS-b.defects, pQ=Math.round(25*good/CHAIRS);
+  const pVar=a.range>0?Math.round(20*cl((a.range-b.range)/a.range)):(b.range===0?20:0);
+  const pT=Math.round(20*cl((a.avg-b.avg)/(a.avg*.35)));
+  const total=Math.min(100,pSeq+pKey+pQ+pVar+pT);
+  let rowsH='<span></span><span class="h">Ronda 1 · a su manera</span><span class="h">Ronda 2 · con estándar</span>';
+  for(let i=0;i<CHAIRS;i++){ const x=a.res[i], y=b.res[i]; rowsH+='<span>Silla '+(i+1)+' · '+y.op+'</span><b class="'+(x.defect?'bad':'')+'">'+fmt1(x.t)+'</b><b class="'+(y.defect?'bad':'ok')+'">'+fmt1(y.t)+'</b>'; }
+  rowsH+='<span><b style="background:none;padding:0;font-size:20px">Promedio</b></span><b>'+fmt1(a.avg)+'</b><b class="ok">'+fmt1(b.avg)+'</b>';
+  rowsH+='<span><b style="background:none;padding:0;font-size:20px">Variación</b></span><b class="bad">'+fmt1(a.range)+'</b><b class="ok">'+fmt1(b.range)+'</b>';
+  rowsH+='<span><b style="background:none;padding:0;font-size:20px">Sillas con defecto</b></span><b class="'+(a.defects?'bad':'ok')+'">'+a.defects+'</b><b class="'+(b.defects?'bad':'ok')+'">'+b.defects+'</b>';
+  rowsH+='<span><b style="background:none;padding:0;font-size:20px">Veces que desarmaron</b></span><b class="'+(a.errs?'bad':'ok')+'">'+a.errs+'</b><b class="'+(b.errs?'bad':'ok')+'">'+b.errs+'</b>';
+  mk('panel res-l','<p class="ptitle">Tiempo por silla (rojo = silla con defecto)</p><div class="tt">'+rowsH+'</div>'+
+    '<p class="ptitle" style="margin-top:6px">Lo que aprendimos</p><ul class="learn"><li>El estándar es la mejor forma conocida hoy: secuencia, tiempo y puntos clave.</li><li>Con estándar todos trabajan igual: baja la variación entre operarios y turnos.</li><li>Los puntos clave evitan defectos (el torque de los brazos).</li><li>Sin estándar no hay mejora: es la base para el siguiente Kaizen.</li></ul>');
+  const R=mk('panel res-r','<p class="ptitle">Puntos de productividad</p><div class="pts">'+
+    '<span>Secuencia de la hoja</span><span>'+pSeq+'/20</span>'+
+    '<span>Puntos clave</span><span>'+pKey+'/15</span>'+
+    '<span>Calidad en la ronda 2</span><span>'+pQ+'/25</span>'+
+    '<span>Reducción de variación</span><span>'+pVar+'/20</span>'+
+    '<span>Reducción de tiempo</span><span>'+pT+'/20</span>'+
+    '<span class="tot">Total</span><span class="tot">'+total+'/100</span></div>'+
+    '<p style="margin:4px 0 0;font-size:17px;color:var(--muted)">Cada error al armar la hoja resta 3 puntos. La calidad cuenta las sillas sin defecto de la ronda 2.</p>'+
+    '<div class="code"><span>Calificación de la mesa<br>(escala del 1 al 10)</span><b>'+calif(total)+'/10</b></div>'+
+    '<button class="bigbtn" id="again" style="align-self:stretch;margin-top:12px;font-size:26px">Ver tabla de resultados →</button>');
+  R.querySelector('#again').addEventListener('click',()=>tablaResultados(7,[{c:calif(total),d:total+' de 100 puntos de productividad'}],reset));
+};
+
+/* ---------- Reinicio con confirmación ---------- */
+const rb=document.getElementById('reset'); let armT=null;
+rb.addEventListener('click',()=>{
+  if(rb.classList.contains('arm')){clearTimeout(armT); rb.classList.remove('arm'); rb.textContent='Reiniciar mesa'; reset(); return;}
+  rb.classList.add('arm'); rb.textContent='¿Seguro? Toca otra vez'; armT=setTimeout(()=>{rb.classList.remove('arm'); rb.textContent='Reiniciar mesa';},3000);
+});
+
+reset();
+/* ---------- Tabla de resultados (común a las 7 mesas) ---------- */
+function calif(t){return Math.max(1,Math.min(10,Math.round(t/10)));}
+function tablaResultados(mesa,teams,onNext){
+  const KEY='ergosilla-mesa'+mesa+'-tabla';
+  const load=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}};
+  const save=l=>{try{localStorage.setItem(KEY,JSON.stringify(l.slice(0,60)));}catch(e){}};
+  let mem=load(), saved=false, newIds=[];
+  const o=document.createElement('div'); o.className='tr-ov'; stage.appendChild(o);
+  o.innerHTML='<div class="tr-l"><p class="tr-k">Mesa '+mesa+' · Tabla de resultados</p><h2>Guarden su calificación</h2><div class="tr-form" style="display:flex;flex-direction:column;gap:10px"></div><button class="tr-save">Guardar en la tabla</button><p class="tr-note">Escala del 1 al 10, igual en las 7 mesas: 10 es el mejor resultado. La tabla queda guardada en esta tablet.</p><div class="tr-btns"><button class="tr-next">Saltar y reiniciar</button><button class="tr-clear">Borrar tabla</button></div></div>'+
+    '<div class="tr-r"><p class="tr-k">Posiciones de la mesa '+mesa+'</p><div class="tr-head"><span>Lugar</span><span>Equipo</span><span>Calificación</span></div><div class="tr-list"></div></div>';
+  const form=o.querySelector('.tr-form'), list=o.querySelector('.tr-list'), note=o.querySelector('.tr-note'), sv=o.querySelector('.tr-save'), nx=o.querySelector('.tr-next'), cl=o.querySelector('.tr-clear');
+  const inputs=teams.map((t,i)=>{
+    const r=document.createElement('div'); r.className='tr-row'; r.innerHTML='<input maxlength="18" autocomplete="off"><div class="cal"><b></b><small>de 10</small></div><div class="det"></div>'; form.appendChild(r);
+    const inp=r.querySelector('input'); inp.placeholder=teams.length>1?'Nombre del equipo '+(i+1):'Nombre del equipo'; inp.value=t.n||'';
+    r.querySelector('b').textContent=t.c; r.querySelector('.det').textContent=t.d||''; return inp;
+  });
+  function render(){
+    list.innerHTML='';
+    if(!mem.length){ list.innerHTML='<div class="tr-empty">Todavía no hay equipos en la tabla.<br>¡Sean los primeros!</div>'; return; }
+    mem.slice(0,10).forEach((e,i)=>{
+      const it=document.createElement('div'); it.className='tr-item'+(i<3?' p'+(i+1):'')+(newIds.includes(e.id)?' new':'');
+      it.innerHTML='<span class="rk">'+(i+1)+'</span><span class="nm"><b></b><small></small></span><span class="cv">'+e.c+'<small>/10</small></span>';
+      it.querySelector('b').textContent=e.n; it.querySelector('small').textContent=e.d||''; list.appendChild(it);
+    });
+    if(mem.length>10){ const m=document.createElement('div'); m.className='tr-note'; m.style.textAlign='center'; m.textContent='+ '+(mem.length-10)+' equipos más'; list.appendChild(m); }
+  }
+  sv.addEventListener('click',()=>{
+    if(saved) return;
+    if(inputs.some(x=>!x.value.trim())){ note.classList.add('warn'); note.textContent='Escriban el nombre del equipo para guardarlo.'; inputs.find(x=>!x.value.trim()).focus(); return; }
+    const now=Date.now();
+    teams.forEach((t,i)=>{ const id=now+'-'+i; newIds.push(id); mem.push({id:id,n:inputs[i].value.trim(),c:t.c,d:t.d||'',t:now+i}); });
+    mem.sort((a,b)=>b.c-a.c||a.t-b.t); save(mem); saved=true;
+    inputs.forEach(x=>x.readOnly=true); sv.disabled=true; sv.textContent='Guardado';
+    const pos=mem.findIndex(e=>e.id===newIds[0])+1;
+    note.classList.remove('warn'); note.textContent=teams.length>1?'Guardados. Revisen las posiciones de la mesa.':('Quedaron en el lugar '+pos+' de '+mem.length+'.');
+    nx.textContent='Siguiente equipo'; nx.classList.add('go'); render();
+  });
+  nx.addEventListener('click',()=>{ o.remove(); if(onNext) onNext(); });
+  let armT=null;
+  cl.addEventListener('click',()=>{
+    if(cl.classList.contains('arm')){ clearTimeout(armT); cl.classList.remove('arm'); cl.textContent='Borrar tabla'; mem=[]; newIds=[]; save(mem); render(); return; }
+    cl.classList.add('arm'); cl.textContent='¿Borrar todo? Toca otra vez'; armT=setTimeout(()=>{cl.classList.remove('arm'); cl.textContent='Borrar tabla';},3000);
+  });
+  render();
+  if(inputs[0]&&!inputs[0].value) setTimeout(()=>{try{inputs[0].focus();}catch(e){}},50);
+}
+
+})();
+</script>
+<script>
+/* Pantalla completa al primer toque (tablets Android/Chrome); en iPad usar "Agregar a pantalla de inicio" */
+(function(){var done=false;document.addEventListener('pointerdown',function(){if(done)return;done=true;try{var d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(function(){});}catch(e){}},true);})();
+</script></body></html>

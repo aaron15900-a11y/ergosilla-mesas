@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#141920">
+<title>ErgoSilla · Mesas de trabajo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23FFC531%22/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  color-scheme:dark;
+  --floor:#1B2129; --panel:#252E38; --panel2:#2F3A46; --line:rgba(190,205,222,.18);
+  --ink:#F2F5F8; --muted:#A9B5C3; --yellow:#FFC531;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Barlow','Segoe UI',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--floor);color:var(--ink);font-family:var(--body)}
+body{min-height:100vh;padding:max(16px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))}
+.wrap{max-width:1180px;margin:0 auto}
+header{display:flex;align-items:center;gap:14px;padding:18px 0 22px;border-bottom:4px solid var(--yellow)}
+header b{display:block;font:800 30px/1 var(--display);letter-spacing:.02em}
+header span{display:block;font:600 14px/1.2 var(--body);color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-top:3px}
+h1{margin:28px 0 6px;font:800 clamp(40px,7vw,72px)/.95 var(--display);text-transform:uppercase}
+.lead{margin:0 0 26px;font-size:clamp(17px,2.2vw,21px);line-height:1.45;color:#D6DEE7;max-width:760px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+a.mesa{display:flex;flex-direction:column;gap:10px;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;min-height:170px;transition:transform .15s,border-color .15s}
+a.mesa:hover,a.mesa:focus-visible{border-color:var(--yellow);transform:translateY(-2px);outline:none}
+a.mesa:active{transform:scale(.98)}
+.num{display:flex;align-items:center;gap:12px}
+.num i{font-style:normal;width:52px;height:52px;border-radius:12px;background:var(--yellow);color:#1A1405;display:grid;place-items:center;font:800 30px/1 var(--display);flex:none}
+.num small{font:700 14px/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--yellow)}
+a.mesa h2{margin:0;font:800 30px/1.05 var(--display)}
+a.mesa p{margin:0;font-size:16px;line-height:1.4;color:var(--muted)}
+a.mesa .go{margin-top:auto;font:800 18px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--yellow)}
+.tips{margin-top:26px;background:#0F1318;border-radius:12px;padding:18px 20px;font-size:16px;line-height:1.5;color:#D6DEE7}
+.tips b{color:var(--yellow)}
+.tips ul{margin:8px 0 0;padding-left:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg width="46" height="46" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="#FFC531"/><path d="M13 9h14v12H13zM11 21h18v4H11zM19 25v6M12 34l7-3 7 3" stroke="#1A1405" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><b>ErgoSilla</b><span>Planta de sillas de oficina · Mesas de trabajo</span></div>
+  </header>
+  <h1>Elige tu mesa</h1>
+  <p class="lead">Cada mesa tiene su mini juego. Abre el de tu mesa en la tablet, en horizontal. Al final, cada equipo guarda su calificación del 1 al 10 en la tabla de resultados.</p>
+  <nav class="grid" aria-label="Mesas">
+    <a class="mesa" href="mesa1.html"><div class="num"><i>1</i><small>Las 5S</small></div><h2>Reto del orden</h2><p>Ordenen la estación de rodajas y armen el kit en menos tiempo.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa2.html"><div class="num"><i>2</i><small>Cuello de botella</small></div><h2>Encuentra el problema</h2><p>Trabajen la línea de 4 estaciones y descubran cuál frena a todas.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa3.html"><div class="num"><i>3</i><small>Poka Yoke</small></div><h2>Evita el error</h2><p>Armen sillas contra reloj y diseñen dispositivos a prueba de errores.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa4.html"><div class="num"><i>4</i><small>MUDA</small></div><h2>Atrapa la muda</h2><p>Atrapen los desperdicios antes de que lleguen al cliente. Modo duelo.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa5.html"><div class="num"><i>5</i><small>PHVA</small></div><h2>La rueda de la mejora</h2><p>Resuelvan las sillas cojas con Planear, Hacer, Verificar y Actuar.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa6.html"><div class="num"><i>6</i><small>Kanban</small></div><h2>Controla el caos</h2><p>Comparen producir empujando un plan contra jalar con tarjetas Kanban.</p><span class="go">Jugar →</span></a>
+    <a class="mesa" href="mesa7.html"><div class="num"><i>7</i><small>Trabajo estandarizado</small></div><h2>A su manera vs. el estándar</h2><p>Creen la hoja de trabajo estándar y bajen la variación entre operarios.</p><span class="go">Jugar →</span></a>
+  </nav>
+  <div class="tips"><b>Para el facilitador:</b>
+    <ul>
+      <li>Usen la tablet en horizontal. En Android, el juego pasa a pantalla completa con el primer toque.</li>
+      <li>En iPad: abran la mesa en Safari, toquen Compartir y luego "Agregar a pantalla de inicio" para jugar sin barras.</li>
+      <li>La tabla de resultados de cada mesa se guarda en esa tablet. No borren los datos del navegador durante el evento.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

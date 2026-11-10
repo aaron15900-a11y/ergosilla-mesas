@@ -1,0 +1,673 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#141920"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23FFC531%22/%3E%3C/svg%3E"></head><body><title>Controla el Caos</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: escenario fijo 1280×800 (tablet horizontal) escalado a la ventana; barra superior con pasos; cada paso arma su escena (mismo formato que la Mesa 1) */
+:root{
+  color-scheme:dark;
+  --floor:#1B2129; --panel:#252E38; --panel2:#2F3A46; --line:rgba(190,205,222,.18);
+  --steel:#5D6875; --steel-top:#6E7A88; --ink:#F2F5F8; --muted:#A9B5C3;
+  --yellow:#FFC531; --teal:#19B3A4; --red:#EF4D4D; --green:#3CC37A;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Barlow','Segoe UI',Arial,sans-serif;
+}
+[hidden]{display:none!important}
+html{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--floor);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none}
+.vp{position:relative;height:100%;box-sizing:border-box;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:hidden}
+.stage{position:absolute;left:50%;top:50%;width:1280px;height:800px;transform-origin:center;background:var(--floor);border-radius:14px;overflow:hidden;outline:1px solid var(--line)}
+button{font-family:var(--body);cursor:pointer}
+button:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+
+.top{position:absolute;left:0;top:0;width:1280px;height:72px;box-sizing:border-box;padding:0 20px;display:flex;align-items:center;gap:18px;background:#141920;border-bottom:4px solid var(--yellow)}
+.brand{display:flex;align-items:center;gap:10px;min-width:220px}
+.brand b{font:800 26px/1 var(--display);letter-spacing:.02em}
+.brand span{display:block;font:600 14px/1.1 var(--body);color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.chips{flex:1;display:flex;gap:6px;justify-content:center}
+.chip{font:700 15px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;padding:8px 12px;border-radius:6px;background:var(--panel);color:var(--muted)}
+.chip.on{background:var(--yellow);color:#1A1405}
+.chip.done{background:#24413A;color:#9FE6CF}
+.clock{font:700 34px/1 var(--display);font-variant-numeric:tabular-nums;min-width:96px;text-align:right}
+.reset{border:1px solid var(--line);background:var(--panel);color:var(--muted);font-weight:600;font-size:14px;padding:9px 12px;border-radius:8px}
+.reset.arm{background:var(--red);color:#fff;border-color:var(--red)}
+
+.scene{position:absolute;left:0;top:72px;width:1280px;height:728px;touch-action:none}
+.drag{cursor:grab}
+.lift{filter:drop-shadow(0 14px 14px rgba(0,0,0,.45));cursor:grabbing}
+.bench{position:absolute;border-radius:14px;background:linear-gradient(180deg,var(--steel-top),var(--steel));box-shadow:inset 0 0 0 2px rgba(255,255,255,.08)}
+.bench::before{content:"";position:absolute;inset:-10px;border-radius:20px;background:repeating-linear-gradient(135deg,var(--yellow) 0 18px,#1B1F24 18px 36px);z-index:-1}
+.panel{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-sizing:border-box}
+.ptitle{margin:0;font:700 20px/1 var(--display);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+div.ptitle{position:absolute}
+.next{position:absolute;right:24px;bottom:22px;z-index:900;border:0;background:var(--yellow);color:#1A1405;font:800 26px/1 var(--display);letter-spacing:.03em;padding:16px 26px;border-radius:10px;box-shadow:0 8px 20px rgba(0,0,0,.35)}
+.toast{position:absolute;left:50%;top:86px;transform:translateX(-50%);z-index:950;max-width:760px;background:#0F1318;border:2px solid var(--teal);color:var(--ink);font:600 20px/1.35 var(--body);padding:14px 20px;border-radius:10px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.45)}
+.toast.bad{border-color:var(--red)}
+.toast.good{border-color:var(--green)}
+
+.overlay{position:absolute;inset:0;z-index:1000;background:rgba(10,13,17,.72);display:grid;place-items:center}
+.card{width:720px;background:var(--panel);border:1px solid var(--line);border-top:8px solid var(--yellow);border-radius:14px;padding:34px 40px;display:flex;flex-direction:column;gap:16px;box-sizing:border-box}
+.card .k{margin:0;font:700 18px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--yellow)}
+.card h2{margin:0;font:800 52px/1 var(--display);letter-spacing:.01em}
+.card p{margin:0;font-size:23px;line-height:1.45;color:#D6DEE7}
+.card .go{align-self:flex-start;border:0;background:var(--yellow);color:#1A1405;font:800 26px/1 var(--display);padding:15px 28px;border-radius:10px;margin-top:6px}
+.card .tip{font-size:18px;color:var(--muted);border-left:4px solid var(--teal);padding-left:14px}
+
+.zone{position:absolute;border:3px dashed rgba(255,255,255,.28);border-radius:14px;box-sizing:border-box}
+.zone .zl{position:absolute;left:0;right:0;top:12px;text-align:center;font:800 26px/1 var(--display);letter-spacing:.06em}
+.zone.keep{border-color:var(--green);background:rgba(60,195,122,.08)}
+.zone.keep .zl{color:#8FF0C4}
+.zone.redtag{border-color:var(--red);background:rgba(239,77,77,.08)}
+.zone.redtag .zl{color:#FF9C9C}
+.locked{pointer-events:none}
+
+/* HUD de la ronda */
+.hud{position:absolute;left:24px;top:12px;width:1232px;height:58px;display:flex;gap:10px}
+.hb{flex:1;background:#0F1318;border-radius:10px;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 12px}
+.hb small{font:700 14px/1.1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.hb b{font:800 32px/1 var(--display);font-variant-numeric:tabular-nums}
+.hb.g b{color:#8FF0C4}.hb.y b{color:var(--yellow)}.hb.r b{color:#FF9C9C}
+
+/* Estación */
+.station{left:24px;top:84px;width:360px;height:380px;padding:18px}
+.mach{position:absolute;left:18px;right:18px;top:52px;height:170px;border-radius:12px;background:#3A4552;border:3px solid #22292F;box-sizing:border-box}
+.mach .lamp{position:absolute;left:14px;top:12px;width:18px;height:18px;border-radius:50%;background:#4A525C}
+.mach .lamp.on{background:var(--green);box-shadow:0 0 12px var(--green)}
+.mach .lamp.idle{background:var(--yellow)}
+.mach .mk{position:absolute;left:50%;top:22px;width:96px;height:96px;margin-left:-48px;opacity:.25}
+.mach .mk svg{width:100%;height:100%}
+.mach .mk.on{opacity:1}
+.mach .prog{position:absolute;left:16px;right:16px;bottom:16px;height:16px;border-radius:8px;background:#1B2129;overflow:hidden}
+.mach .prog i{position:absolute;left:0;top:0;bottom:0;background:var(--teal);width:0}
+.stat{position:absolute;left:18px;right:18px;top:232px;font:700 20px/1.25 var(--body);color:#D6DEE7;text-align:center;min-height:50px}
+.prod{position:absolute;left:18px;right:18px;bottom:18px;border:0;border-radius:12px;background:var(--yellow);color:#1A1405;font:800 28px/1 var(--display);padding:18px 0;box-shadow:0 6px 0 #B8890B}
+.prod:disabled{background:#4A525C;color:#8C96A1;box-shadow:0 6px 0 #2D333A;cursor:not-allowed}
+.dropk{position:absolute;left:18px;right:18px;bottom:18px;height:74px;border:3px dashed var(--yellow);border-radius:12px;box-sizing:border-box;display:grid;place-items:center;text-align:center;font:800 20px/1.1 var(--display);letter-spacing:.05em;color:var(--yellow);background:rgba(255,197,49,.06)}
+.dropk.busy{border-color:#56636F;color:var(--muted)}
+
+/* Supermercado */
+.shelf{position:absolute;left:16px;right:16px;height:100px;border-radius:10px;background:rgba(20,25,32,.5)}
+.shelf .lb{position:absolute;left:10px;top:10px;width:92px;height:80px;border-radius:8px;display:grid;place-items:center;font:800 22px/1 var(--display);letter-spacing:.05em;color:#fff;text-align:center}
+.shelf .lb small{display:block;font:700 13px/1.2 var(--body);letter-spacing:.04em;opacity:.85}
+.shelf .it{position:absolute;left:116px;right:12px;top:12px;height:80px;display:flex;align-items:center;gap:4px}
+.shelf .it i{width:44px;height:52px;display:block;flex:none}
+.shelf .it i svg{width:100%;height:100%}
+.shelf .it i.slot{border:2px dashed rgba(255,255,255,.3);border-radius:8px;box-sizing:border-box}
+.shelf .it b{font:800 26px/1 var(--display);color:var(--yellow);margin-left:6px}
+.shelf .cap{position:absolute;right:12px;top:8px;font:700 13px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+/* Clientes */
+.cust{left:900px;top:84px;width:356px;height:620px;padding:16px}
+.olist{position:absolute;left:16px;right:16px;top:50px;bottom:16px;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.ord{flex:none;height:80px;border-radius:10px;background:var(--panel2);display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:12px;padding:0 12px;position:relative;overflow:hidden;animation:pop .3s ease-out}
+.ord i{width:48px;height:56px}
+.ord i svg{width:100%;height:100%}
+.ord b{display:block;font:800 22px/1 var(--display)}
+.ord small{display:block;font:600 15px/1.2 var(--body);color:var(--muted);margin-top:3px}
+.ord em{font-style:normal;font:800 15px/1 var(--display);letter-spacing:.05em;text-transform:uppercase;padding:6px 8px;border-radius:5px;background:#3B4653;color:var(--muted)}
+.ord .pat{position:absolute;left:0;bottom:0;height:5px;background:var(--yellow)}
+.ord.ok{background:#1F4436}.ord.ok em{background:var(--green);color:#06231A}
+.ord.late{background:#4A3A16}.ord.late em{background:var(--yellow);color:#1A1405}
+.ord.lost{background:#4A2326}.ord.lost em{background:var(--red);color:#fff}
+.ord.wait em{background:#5A4214;color:#FFD9A8}
+@keyframes pop{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+
+/* Plan y tablero */
+.plan{left:24px;top:484px;width:860px;height:220px;padding:18px 20px}
+.pchips{position:absolute;left:20px;right:20px;top:54px;display:grid;grid-template-columns:repeat(10,1fr);gap:8px}
+.pchips i{height:40px;border-radius:8px;display:grid;place-items:center;font:800 15px/1 var(--display);color:#fff;letter-spacing:.04em;box-shadow:inset 0 0 0 2px rgba(255,255,255,.15)}
+.pchips i.done{opacity:.28}
+.pchips i.now{outline:3px solid var(--yellow);outline-offset:2px}
+.boss{position:absolute;left:20px;right:20px;bottom:16px;font:600 18px/1.3 var(--body);color:var(--muted)}
+.boss b{color:var(--yellow)}
+.kcard{position:absolute;width:132px;height:84px;box-sizing:border-box;border-radius:10px;background:#F4F1E8;color:#1A2028;box-shadow:0 4px 0 #B8B2A2;touch-action:none;padding:8px 10px 8px 16px;transition:left .25s, top .25s}
+.kcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:8px;border-radius:10px 0 0 10px;background:var(--c)}
+.kcard small{display:block;font:700 12px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;color:#6A7380}
+.kcard b{display:block;font:800 26px/1.05 var(--display);margin-top:4px}
+.kcard span{display:block;font:600 13px/1.2 var(--body);color:#4A5562;margin-top:2px}
+.kempty{position:absolute;left:20px;right:20px;top:70px;text-align:center;font:600 18px/1.4 var(--body);color:var(--muted)}
+
+/* Diagnóstico y reglas */
+.tbl{display:grid;grid-template-columns:150px repeat(4,1fr);gap:8px 10px;font:600 19px/1.2 var(--body);align-items:center}
+.tbl .h{font:700 14px/1.1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:center}
+.tbl b{font:800 28px/1 var(--display);text-align:center;padding:8px 0;border-radius:6px;background:var(--panel2)}
+.tbl b.bad{background:#5A2323;color:#FFB0B0}
+.tbl b.ok{background:#1F4436;color:#8FF0C4}
+.tbl .m{display:flex;align-items:center;gap:8px;font:800 22px/1 var(--display)}
+.tbl .m i{width:30px;height:36px;display:block}
+.tbl .m i svg{width:100%;height:100%}
+.qbig{position:absolute;font:800 40px/1.05 var(--display);letter-spacing:.01em}
+.opt{position:absolute;width:600px;min-height:90px;box-sizing:border-box;border:0;border-radius:12px;background:#E9EDF1;color:#1A2028;text-align:left;font:700 23px/1.25 var(--body);padding:16px 22px;box-shadow:0 5px 0 #B8C1CB}
+.opt.no{background:#5A2A2D;color:#FFC9C9;box-shadow:0 5px 0 #3A1B1D}
+.opt.ok{background:var(--green);color:#0E2A1B;box-shadow:0 5px 0 #24824F}
+.rcard{position:absolute;width:250px;height:110px;box-sizing:border-box;background:#E9EDF1;border-radius:12px;display:flex;align-items:center;padding:12px 16px;color:#1A2028;box-shadow:0 4px 0 #B8C1CB;touch-action:none;font:700 20px/1.2 var(--body)}
+.rcard.small{transform:scale(.8);transform-origin:top left}
+.board{position:absolute;left:24px;right:24px;top:60px;bottom:24px;background:#F4F1E8;border-radius:6px}
+.board .bh{position:absolute;left:18px;right:18px;top:14px;font:800 22px/1 var(--display);letter-spacing:.04em;color:#1A2028;border-bottom:3px solid #1A2028;padding-bottom:8px}
+
+/* Intro y resultados */
+.intro{position:absolute;left:60px;top:44px;width:640px;display:flex;flex-direction:column;gap:18px}
+.intro .k{margin:0;font:700 20px/1 var(--display);letter-spacing:.16em;text-transform:uppercase;color:var(--yellow)}
+.intro h1{margin:0;font:800 84px/.92 var(--display);text-transform:uppercase;letter-spacing:.005em}
+.intro p{margin:0;font-size:23px;line-height:1.45;color:#D6DEE7}
+.steps{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.steps div{background:var(--panel);border-radius:10px;padding:12px 14px;font-size:18px;line-height:1.3;color:var(--muted)}
+.steps b{display:block;font:800 22px/1.1 var(--display);color:var(--ink);letter-spacing:.02em}
+.bigbtn{align-self:flex-start;border:0;background:var(--yellow);color:#1A1405;font:800 32px/1 var(--display);padding:18px 34px;border-radius:12px;margin-top:6px;box-shadow:0 6px 0 #B8890B}
+.pile{position:absolute;display:flex;flex-wrap:wrap;gap:2px}
+.pile i{width:40px;height:46px;display:block}
+.pile i svg{width:100%;height:100%}
+.bubble{position:absolute;background:#fff;color:#1A2028;border-radius:14px;padding:12px 16px;font:700 20px/1.25 var(--body);box-shadow:0 6px 0 rgba(0,0,0,.25)}
+.bubble::after{content:"";position:absolute;left:30px;bottom:-14px;border:8px solid transparent;border-top:8px solid #fff;border-left:8px solid #fff}
+.res-l{left:30px;top:24px;width:640px;height:680px;padding:28px 32px;display:flex;flex-direction:column;gap:16px}
+.res-r{left:690px;top:24px;width:560px;height:680px;padding:28px 32px;display:flex;flex-direction:column;gap:12px}
+.bar{display:grid;grid-template-columns:120px 1fr 90px;align-items:center;gap:14px;font:700 24px/1 var(--display)}
+.bar .t{height:40px;border-radius:6px;background:rgba(255,255,255,.06);position:relative;overflow:hidden}
+.bar .t i{position:absolute;left:0;top:0;bottom:0;border-radius:6px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.bar span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.learn{margin:0;padding-left:22px;font-size:19px;line-height:1.4;color:#D6DEE7;display:flex;flex-direction:column;gap:6px}
+.pts{display:grid;grid-template-columns:1fr auto;font-size:20px;row-gap:10px;column-gap:16px}
+.pts span:nth-child(even){font:800 24px/1 var(--display);text-align:right;font-variant-numeric:tabular-nums}
+.pts .tot{font:800 30px/1 var(--display);border-top:2px solid var(--line);padding-top:12px}
+.code{margin-top:auto;background:var(--yellow);color:#1A1405;border-radius:12px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between}
+.code span{font:700 16px/1.2 var(--body)}
+.code b{font:800 50px/1 var(--display);letter-spacing:.06em}
+
+/* Roles y armado */
+.station .order{position:absolute;left:18px;right:18px;top:46px;height:56px;border-radius:10px;background:#0F1318;display:grid;place-items:center;font:800 21px/1.1 var(--display);letter-spacing:.04em;color:var(--muted);box-sizing:border-box;text-align:center;padding:0 10px}
+.station .order.tag{color:#fff;box-shadow:inset 6px 0 0 var(--c,var(--yellow))}
+.station .order:not(.dropk).tag{box-shadow:inset 6px 0 0 var(--yellow)}
+.station .order.dropk{border:3px dashed var(--yellow);background:rgba(255,197,49,.06);color:var(--yellow);font-size:18px}
+.station .order.dropk.busy{border-style:solid;border-color:var(--c);color:#fff;background:#0F1318}
+.station .mach{top:112px;height:150px}
+.station .mach .mk{top:14px;width:84px;height:96px;margin-left:-42px}
+.station .stat{position:absolute;left:10px;right:10px;bottom:10px;top:auto;font:700 17px/1.2 var(--body);color:#D6DEE7;text-align:center;min-height:0}
+.tiles{position:absolute;left:18px;right:18px;bottom:18px;height:96px;display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ptile{position:relative;overflow:hidden;border:0;border-radius:12px;background:#E9EDF1;color:#1A2028;font:800 19px/1 var(--display);box-shadow:0 5px 0 #B8C1CB;touch-action:none;padding:0 4px}
+.ptile i{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(60,195,122,.6)}
+.ptile span{position:relative;display:block}
+.ptile small{display:block;font:600 12px/1.2 var(--body);color:#4A5562;margin-top:6px}
+.ptile:disabled{opacity:.35;cursor:not-allowed}
+.ptile.done{background:#1F4436;color:#8FF0C4;box-shadow:0 5px 0 #143126;opacity:1}
+.ptile.done small{color:#8FF0C4}
+.shelf{cursor:grab;touch-action:none}
+.shelf:active{outline:3px solid var(--yellow)}
+.ghost{position:absolute;width:56px;height:64px;z-index:960;pointer-events:none;filter:drop-shadow(0 12px 10px rgba(0,0,0,.5))}
+.ghost svg{width:100%;height:100%}
+.cust .sub{margin:6px 0 0;font:600 15px/1.2 var(--body);color:var(--yellow)}
+.cust .olist{top:72px}
+.ord.wait.imp{background:#4A2E1E}
+.ord.wait.imp em{background:#6A2A1A;color:#FFB59A}
+.ord .pat.imp{background:var(--red)}
+.roster{left:760px;top:44px;width:470px;padding:24px 26px;display:flex;flex-direction:column;gap:12px}
+.roster h2{margin:0;font:800 32px/1 var(--display)}
+.roster p{margin:0;font-size:17px;line-height:1.4;color:var(--muted)}
+.prow{display:grid;grid-template-columns:1fr;gap:6px;background:var(--panel2);border-radius:12px;padding:12px 14px}
+.prow label{font:800 20px/1 var(--display);letter-spacing:.04em;color:var(--yellow)}
+.prow span{font:600 15px/1.3 var(--body);color:#D6DEE7}
+.prow input{width:100%;box-sizing:border-box;font:600 20px/1 var(--body);padding:9px 12px;border-radius:8px;border:2px solid var(--line);background:#1B2129;color:var(--ink)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* Tabla de resultados (común a las 7 mesas) */
+.tr-ov{position:absolute;left:0;top:76px;width:1280px;height:724px;z-index:1100;background:var(--floor);display:flex;gap:20px;padding:22px 24px;box-sizing:border-box;font-family:var(--body);color:var(--ink)}
+.tr-l,.tr-r{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px 28px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px}
+.tr-l{width:500px;flex:none}
+.tr-r{flex:1;min-width:0}
+.tr-k{margin:0;font:700 18px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--yellow)}
+.tr-l h2{margin:0;font:800 44px/1 var(--display)}
+.tr-row{display:grid;grid-template-columns:1fr 120px;gap:12px;align-items:center;background:var(--panel2);border-radius:12px;padding:12px 14px}
+.tr-row input{width:100%;box-sizing:border-box;font:600 22px/1 var(--body);padding:12px;border-radius:8px;border:2px solid var(--line);background:#141920;color:var(--ink)}
+.tr-row input:focus{outline:3px solid var(--yellow);outline-offset:1px}
+.tr-row .cal{text-align:center;background:var(--yellow);color:#1A1405;border-radius:10px;padding:8px 0}
+.tr-row .cal b{display:block;font:800 46px/1 var(--display)}
+.tr-row .cal small{display:block;font:700 13px/1.2 var(--body)}
+.tr-row .det{grid-column:1/-1;font:600 15px/1.2 var(--body);color:var(--muted)}
+.tr-l button{border:0;border-radius:10px;font:800 26px/1 var(--display);padding:16px 22px;cursor:pointer}
+.tr-save{background:var(--yellow);color:#1A1405;box-shadow:0 6px 0 #B8890B}
+.tr-save:disabled{background:#2F4A44;color:#9FE6CF;box-shadow:none;cursor:default}
+.tr-note{margin:0;font:600 16px/1.4 var(--body);color:var(--muted)}
+.tr-note.warn{color:#FF9C9C}
+.tr-btns{margin-top:auto;display:flex;gap:10px}
+.tr-btns .tr-next{flex:1;background:var(--panel2);color:var(--ink);border:1px solid var(--line)!important}
+.tr-btns .tr-next.go{background:var(--green);color:#06231A}
+.tr-btns .tr-clear{background:none;color:var(--muted);border:1px solid var(--line)!important;font-size:18px!important}
+.tr-btns .tr-clear.arm{background:var(--red);color:#fff}
+.tr-head,.tr-item{display:grid;grid-template-columns:64px 1fr 150px;align-items:center;gap:12px}
+.tr-head{font:700 14px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 14px}
+.tr-head span:last-child{text-align:center}
+.tr-list{display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.tr-item{background:var(--panel2);border-radius:10px;padding:8px 14px;min-height:46px}
+.tr-item .rk{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font:800 24px/1 var(--display);background:#1B2129;color:var(--muted)}
+.tr-item.p1 .rk{background:#FFC531;color:#1A1405}
+.tr-item.p2 .rk{background:#C9D1D9;color:#1A2028}
+.tr-item.p3 .rk{background:#C8955A;color:#1A1405}
+.tr-item .nm b{display:block;font:800 24px/1.1 var(--display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-item .nm small{display:block;font:600 14px/1.2 var(--body);color:var(--muted)}
+.tr-item .cv{text-align:center;font:800 34px/1 var(--display);font-variant-numeric:tabular-nums}
+.tr-item .cv small{font-size:20px;color:var(--muted)}
+.tr-item.new{outline:3px solid var(--green);background:#1F4436}
+.tr-empty{padding:30px 0;text-align:center;font:600 20px/1.4 var(--body);color:var(--muted)}
+</style>
+
+<div class="vp" id="vp">
+  <div class="stage" id="stage">
+    <header class="top">
+      <div class="brand">
+        <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="8" fill="#FFC531"/><path d="M13 9h14v12H13zM11 21h18v4H11zM19 25v6M12 34l7-3 7 3" stroke="#1A1405" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div><b>ErgoSilla</b><span>Mesa 6 · Kanban</span></div>
+      </div>
+      <nav class="chips" id="chips" aria-label="Pasos"></nav>
+      <div class="clock" id="clock" aria-live="off">0:00</div>
+      <button class="reset" id="reset">Reiniciar mesa</button>
+    </header>
+    <main class="scene" id="scene"></main>
+  </div>
+</div>
+
+<script>
+(function(){
+/* ---------- Datos del juego ---------- */
+const M={A:{n:'Azul',c:'#2E6FD6'},N:{n:'Negra',c:'#3A3F47'},R:{n:'Roja',c:'#E0463E'}};
+const KEYS=['A','N','R'];
+const DEMAND=['N','A','N','N','R','N','N','A','N','R','N','A']; // 7 negras, 3 azules, 2 rojas
+const GAP=5, FIRST=3, START=2;
+const PLAN=[].concat(Array(10).fill('A'),Array(6).fill('R'),Array(4).fill('N')); // pronóstico: "se venden más las azules"
+function chairSVG(k){const c=M[k].c,o=k==='N'?' stroke="#8A94A0" stroke-width="1.5"':'';return '<svg viewBox="0 0 40 46"><rect x="10" y="3" width="20" height="18" rx="5" fill="'+c+'"'+o+'/><rect x="7" y="21" width="26" height="7" rx="3.5" fill="'+c+'"'+o+'/><path d="M20 28v7M9 42l11-7 11 7" stroke="#9AA5B1" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="9" cy="43" r="2.5" fill="#15181C"/><circle cx="31" cy="43" r="2.5" fill="#15181C"/></svg>';}
+
+/* ---------- Escenario y utilidades (igual que Mesa 1) ---------- */
+const vp=document.getElementById('vp'), stage=document.getElementById('stage'), scene=document.getElementById('scene');
+let S=1, Z=10, VIEW=0;
+function fit(){
+  const cs=getComputedStyle(vp);
+  const w=vp.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);
+  const h=vp.clientHeight-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom);
+  S=Math.min(w/1280,h/800); if(!(S>0)) S=.3;
+  stage.style.transform='translate(-50%,-50%) scale('+S+')';
+}
+window.addEventListener('resize',fit); fit();
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function shuffle(a,seed){const r=rng(seed); return a.slice().sort(()=>r()-.5);}
+function mk(cls,html,box,parent){
+  const d=document.createElement('div'); d.className=cls; if(html) d.innerHTML=html;
+  if(box){ if(box.x!=null)d.style.left=box.x+'px'; if(box.y!=null)d.style.top=box.y+'px'; if(box.w!=null)d.style.width=box.w+'px'; if(box.h!=null)d.style.height=box.h+'px'; }
+  (parent||scene).appendChild(d); return d;
+}
+function btn(cls,text,box,parent){const b=document.createElement('button'); b.className=cls; b.textContent=text; if(box){b.style.left=box.x+'px'; b.style.top=box.y+'px';} (parent||scene).appendChild(b); return b;}
+function hit(x,y,list){return list.find(z=>{const r=z.getBoundingClientRect();return x>=r.left&&x<=r.right&&y>=r.top&&y<=r.bottom;});}
+function draggable(d,onDrop){
+  d.classList.add('drag');
+  d.addEventListener('pointerdown',e=>{
+    if(d.classList.contains('locked')) return;
+    e.preventDefault(); e.stopPropagation();
+    try{d.setPointerCapture(e.pointerId);}catch(_){}
+    const sx=e.clientX, sy=e.clientY, ox=parseFloat(d.style.left)||0, oy=parseFloat(d.style.top)||0;
+    let moved=false; d.style.zIndex=++Z; d.style.transition='none'; d.classList.add('lift');
+    const mv=ev=>{const dx=(ev.clientX-sx)/S, dy=(ev.clientY-sy)/S; if(Math.abs(dx)+Math.abs(dy)>6) moved=true; if(moved){d.style.left=(ox+dx)+'px'; d.style.top=(oy+dy)+'px';}};
+    const up=ev=>{
+      d.removeEventListener('pointermove',mv); d.removeEventListener('pointerup',up); d.removeEventListener('pointercancel',up);
+      d.classList.remove('lift'); d.style.transition='';
+      let ok=true; if(onDrop) ok=onDrop(ev.clientX,ev.clientY,moved)!==false;
+      if(!ok){ d.style.transition='left .25s ease, top .25s ease'; d.style.left=ox+'px'; d.style.top=oy+'px'; }
+    };
+    d.addEventListener('pointermove',mv); d.addEventListener('pointerup',up); d.addEventListener('pointercancel',up);
+  });
+}
+let toastT=null;
+function toast(msg,kind){
+  const old=stage.querySelector('.toast'); if(old) old.remove();
+  const t=document.createElement('div'); t.className='toast'+(kind?' '+kind:''); t.textContent=msg; stage.appendChild(t);
+  clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),3600);
+}
+function nextBtn(label,fn){
+  const old=scene.querySelector('.next'); if(old) old.remove();
+  const b=document.createElement('button'); b.className='next'; b.textContent=label; b.addEventListener('click',fn); scene.appendChild(b); return b;
+}
+function cardOverlay(k,title,text,btnTxt,cb,tip){
+  const o=mk('overlay','<div class="card"><p class="k"></p><h2></h2><p class="t"></p>'+(tip?'<p class="tip"></p>':'')+'<button class="go"></button></div>');
+  o.querySelector('.k').textContent=k; o.querySelector('h2').textContent=title; o.querySelector('.t').textContent=text; o.querySelector('.go').textContent=btnTxt;
+  if(tip) o.querySelector('.tip').textContent=tip;
+  o.querySelector('.go').addEventListener('click',()=>{o.remove(); if(cb) cb();});
+}
+
+/* ---------- Estado, reloj y pasos ---------- */
+const STEPS=[['r1','1 · Empujar'],['diag','2 · Diagnóstico'],['reglas','3 · Kanban'],['r2','4 · Jalar'],['resultado','Resultado']];
+let st, clockT=null, t0=0;
+const clockEl=document.getElementById('clock');
+function fmt(s){s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function startClock(){ if(clockT) return; t0=performance.now(); clockT=setInterval(()=>{clockEl.textContent=fmt((performance.now()-t0)/1000);},200);}
+function stopClock(){ if(!clockT) return st.time||0; clearInterval(clockT); clockT=null; const s=(performance.now()-t0)/1000; clockEl.textContent=fmt(s); return s;}
+function chips(cur){
+  const c=document.getElementById('chips'); c.innerHTML='';
+  const idx=STEPS.findIndex(s=>s[0]===cur);
+  STEPS.forEach((s,i)=>{const d=document.createElement('span'); d.className='chip'+(i===idx?' on':(idx>i?' done':'')); d.textContent=s[1]; c.appendChild(d);});
+}
+function go(step){ VIEW++; scene.innerHTML=''; Z=10; const t=stage.querySelector('.toast'); if(t) t.remove(); chips(step); VIEWS[step](); }
+const ROLES={arm:'Armador',sur:'Surtidor',men:'Mensajero Kanban'};
+function who(r){return ROLES[r]+(st.names[r]?': '+st.names[r]:'');}
+function reset(){
+  VIEW++; clearInterval(clockT); clockT=null; clockEl.textContent='0:00';
+  st={r1:null,r2:null,err:{diag:0,reglas:0},time:0,names:st&&st.names||{arm:'',sur:'',men:''}};
+  go('intro');
+}
+
+/* ---------- Una ronda de producción (3 roles: armador, surtidor, mensajero) ---------- */
+const ONTIME=6, PATIENCE=12, HOLD=600;
+const PIECES=['Base','Asiento','Respaldo'];
+function buildSVG(k,n){
+  const c=M[k].c, o=k==='N'?' stroke="#8A94A0" stroke-width="1.5"':'';
+  const g='fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-dasharray="3 3"';
+  return '<svg viewBox="0 0 40 46">'+
+    (n>=3?'<rect x="10" y="3" width="20" height="18" rx="5" fill="'+c+'"'+o+'/>':'<rect x="10" y="3" width="20" height="18" rx="5" '+g+'/>')+
+    (n>=2?'<rect x="7" y="21" width="26" height="7" rx="3.5" fill="'+c+'"'+o+'/>':'<rect x="7" y="21" width="26" height="7" rx="3.5" '+g+'/>')+
+    (n>=1?'<path d="M20 28v7M9 42l11-7 11 7" stroke="#9AA5B1" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="9" cy="43" r="2.5" fill="#15181C"/><circle cx="31" cy="43" r="2.5" fill="#15181C"/>':'<path d="M20 28v7M9 42l11-7 11 7" '+g+'/>')+'</svg>';
+}
+function Round(pull,onEnd){
+  const myView=VIEW;
+  const G={gt:0,running:false,stock:{A:START,N:START,R:START},made:{A:0,N:0,R:0},build:null,planIdx:0,idle:0,orders:[],next:0,ontime:0,late:0,lost:0,lostBy:{A:0,N:0,R:0},wrong:0,invSum:0,invN:0,bossWarned:0,hold:null};
+  const hud=mk('hud','');
+  const hT=mk('hb','<small>Tiempo</small><b>0:00</b>',null,hud);
+  const hO=mk('hb g','<small>A tiempo</small><b>0</b>',null,hud);
+  const hL=mk('hb y','<small>Tarde</small><b>0</b>',null,hud);
+  const hX=mk('hb r','<small>Clientes perdidos</small><b>0</b>',null,hud);
+  const hI=mk('hb','<small>Sillas en almacén</small><b>6</b>',null,hud);
+  // Estación · Armador
+  const sta=mk('panel station','<p class="ptitle">Estación · <span class="rn"></span></p><div class="order"></div><div class="mach"><div class="lamp"></div><div class="mk"></div><div class="stat"></div></div><div class="tiles"></div>');
+  sta.querySelector('.rn').textContent=who('arm');
+  const ordBox=sta.querySelector('.order'), lamp=sta.querySelector('.lamp'), mkI=sta.querySelector('.mk'), stat=sta.querySelector('.stat'), tilesEl=sta.querySelector('.tiles');
+  if(pull) ordBox.classList.add('dropk');
+  const tiles=PIECES.map((p,i)=>{
+    const b=document.createElement('button'); b.className='ptile'; b.innerHTML='<i></i><span>'+(i+1)+' · '+p+'<small>Mantén presionado</small></span>'; tilesEl.appendChild(b);
+    b.addEventListener('pointerdown',e=>{
+      e.preventDefault(); if(!G.running) return;
+      if(!G.build){ toast(pull?'Sin tarjeta Kanban no se arma nada. Esperen a que el mensajero traiga una.':'El plan ya terminó.',''); return; }
+      if(i!==G.build.n){ toast('Primero va: '+PIECES[G.build.n]+'.','bad'); return; }
+      try{b.setPointerCapture(e.pointerId);}catch(_){}
+      G.hold={i:i,t0:performance.now(),el:b};
+    });
+    const stop=()=>{ if(G.hold&&G.hold.el===b){ G.hold=null; b.querySelector('i').style.width='0'; } };
+    b.addEventListener('pointerup',stop); b.addEventListener('pointercancel',stop);
+    return b;
+  });
+  function drawBuild(){
+    const b=G.build;
+    mkI.innerHTML=b?buildSVG(b.k,b.n):''; mkI.classList.toggle('on',!!b);
+    tiles.forEach((t,i)=>{ t.classList.toggle('done',!!b&&i<b.n); t.disabled=!b||i!==b.n; });
+    if(pull){ ordBox.textContent=b?('Tarjeta: silla '+M[b.k].n.toLowerCase()):'Mensajero: suelta aquí una tarjeta Kanban'; ordBox.classList.toggle('busy',!!b); ordBox.style.setProperty('--c',b?M[b.k].c:'transparent'); }
+    else ordBox.textContent=b?('Plan: silla '+M[b.k].n.toLowerCase()+' · '+(G.planIdx+1)+' de '+PLAN.length):'Plan terminado';
+    ordBox.classList.toggle('tag',!!b);
+  }
+  function nextFromPlan(){ G.build=G.planIdx<PLAN.length?{k:PLAN[G.planIdx],n:0}:null; drawBuild(); drawPlan(); }
+  function pieceDone(){
+    G.build.n++;
+    if(G.build.n>=3){
+      const k=G.build.k; G.made[k]++; G.stock[k]++; drawStock();
+      mkI.animate([{transform:'scale(1.2)'},{transform:'none'}],{duration:250});
+      if(!pull){ G.planIdx++; nextFromPlan(); } else { G.build=null; drawBuild(); }
+    } else drawBuild();
+  }
+  // Almacén · Surtidor
+  const sup=mk('bench','',{x:404,y:84,w:476,h:380});
+  const st1=mk('ptitle','',{x:16,y:12},sup); st1.style.color='#E1E7EE'; st1.textContent=(pull?'Supermercado':'Almacén')+' · '+who('sur');
+  const shelves={};
+  KEYS.forEach((k,i)=>{
+    const s=mk('shelf','<div class="lb" style="background:'+M[k].c+(k==='N'?';box-shadow:inset 0 0 0 2px #8A94A0':'')+'">'+M[k].n+'<small>'+(pull?'máx. 2':'arrastra')+'</small></div><div class="it"></div>',{y:44+i*110},sup);
+    shelves[k]=s.querySelector('.it');
+    s.addEventListener('pointerdown',e=>{
+      e.preventDefault(); if(!G.running) return;
+      if(G.stock[k]<=0){ toast('No hay sillas '+M[k].n.toLowerCase()+'s en el '+(pull?'supermercado':'almacén')+'.','bad'); return; }
+      try{s.setPointerCapture(e.pointerId);}catch(_){}
+      const gh=document.createElement('div'); gh.className='ghost'; gh.innerHTML=chairSVG(k); stage.appendChild(gh);
+      const place=ev=>{const r=stage.getBoundingClientRect(); gh.style.left=((ev.clientX-r.left)/S-28)+'px'; gh.style.top=((ev.clientY-r.top)/S-34)+'px';};
+      place(e);
+      const mv=ev=>place(ev);
+      const up=ev=>{
+        s.removeEventListener('pointermove',mv); s.removeEventListener('pointerup',up); s.removeEventListener('pointercancel',up); gh.remove();
+        const el=document.elementFromPoint(ev.clientX,ev.clientY); const oe=el&&el.closest&&el.closest('.ord');
+        const o=oe&&G.orders.find(x=>x.el===oe);
+        if(!o) return;
+        if(o.state!=='wait'){ toast('Ese pedido ya se cerró.',''); return; }
+        if(o.k!==k){ G.wrong++; toast('Ese cliente pidió silla '+M[o.k].n.toLowerCase()+', no '+M[k].n.toLowerCase()+'.','bad'); return; }
+        serve(o);
+      };
+      s.addEventListener('pointermove',mv); s.addEventListener('pointerup',up); s.addEventListener('pointercancel',up);
+    });
+  });
+  // Clientes
+  const cu=mk('panel cust','<p class="ptitle">Pedidos de clientes</p><p class="sub">Surtidor: arrastra la silla al pedido</p><div class="olist"></div>');
+  const olist=cu.querySelector('.olist');
+  // Plan o tablero · Mensajero
+  let planEl=null, board=null, cards=[];
+  if(!pull) planEl=mk('panel plan','<p class="ptitle">Plan de producción · pronóstico: "se venden más las azules"</p><div class="pchips"></div><div class="boss"><b>El jefe:</b> "Sigan el plan y que la máquina nunca pare. Producir en lotes grandes es más eficiente."</div>');
+  else { board=mk('panel plan','<p class="ptitle">Tablero Kanban · <span class="rn"></span></p><div class="kempty">Cuando el surtidor entrega una silla, su tarjeta Kanban aparece aquí.<br>Mensajero: llévala a la estación. Sin tarjeta, no se arma.</div>'); board.querySelector('.rn').textContent=who('men'); }
+  function drawPlan(){ if(!planEl) return; const pc=planEl.querySelector('.pchips'); pc.innerHTML=''; PLAN.forEach((k,i)=>{const c=document.createElement('i'); c.style.background=M[k].c; c.textContent=M[k].n; if(i<G.planIdx) c.className='done'; else if(i===G.planIdx) c.className='now'; pc.appendChild(c);}); }
+  function drawStock(){
+    KEYS.forEach(k=>{const n=G.stock[k]; let h=''; const show=Math.min(n,6); for(let j=0;j<show;j++) h+='<i>'+chairSVG(k)+'</i>'; if(pull) for(let j=n;j<2;j++) h+='<i class="slot"></i>'; if(n>6) h+='<b>+'+(n-6)+'</b>'; shelves[k].innerHTML=h;});
+    hI.querySelector('b').textContent=G.stock.A+G.stock.N+G.stock.R;
+  }
+  function hudUpd(){ hO.querySelector('b').textContent=G.ontime; hL.querySelector('b').textContent=G.late; hX.querySelector('b').textContent=G.lost; }
+  function layoutCards(){ const k=board.querySelector('.kempty'); if(k) k.hidden=cards.length>0; cards.forEach((c,i)=>{ c.el.style.left=(48+i*142)+'px'; c.el.style.top=(484+66)+'px'; }); }
+  function addCard(k){
+    const el=mk('kcard','<small>Kanban</small><b>'+M[k].n+'</b><span>Armar 1 silla</span>',{x:48+cards.length*142,y:484+66}); el.style.setProperty('--c',M[k].c); el.style.zIndex=++Z;
+    const c={k:k,el:el}; cards.push(c);
+    draggable(el,(x,y,moved)=>{
+      if(moved && !hit(x,y,[ordBox])) return false;
+      if(!G.running) return false;
+      if(G.build){ toast('La estación ya tiene una tarjeta: esperen a que termine esa silla.','bad'); return false; }
+      cards.splice(cards.indexOf(c),1); el.remove(); layoutCards(); G.build={k:k,n:0}; drawBuild(); return true;
+    });
+    layoutCards();
+  }
+  function setOrd(o,state,txt){ o.state=state; o.el.className='ord '+state; o.el.querySelector('em').textContent=txt; const p=o.el.querySelector('.pat'); if(p&&state!=='wait'&&state!=='wait imp') p.remove(); }
+  function serve(o){
+    G.stock[o.k]--; const waited=G.gt-o.at;
+    if(waited<=ONTIME){G.ontime++; setOrd(o,'ok','Entregado');} else {G.late++; setOrd(o,'late','Tarde');}
+    o.state=o.state.split(' ')[0];
+    if(pull) addCard(o.k);
+    drawStock(); hudUpd();
+  }
+  function arrive(i){
+    const k=DEMAND[i];
+    const el=document.createElement('div'); el.className='ord wait'; el.innerHTML='<i>'+chairSVG(k)+'</i><div><b>Pedido #'+(i+1)+'</b><small>Silla '+M[k].n.toLowerCase()+'</small></div><em>Esperando</em><div class="pat"></div>';
+    olist.insertBefore(el,olist.firstChild);
+    while(olist.children.length>7){ const done=[...olist.children].reverse().find(x=>!x.classList.contains('wait')); if(!done) break; done.remove(); }
+    G.orders.push({k:k,at:G.gt,el:el,state:'wait'});
+  }
+  let last=performance.now();
+  function frame(now){
+    if(VIEW!==myView) return;
+    const dt=Math.min(.1,(now-last)/1000); last=now;
+    if(G.running){
+      G.gt+=dt;
+      while(G.next<DEMAND.length && G.gt>=FIRST+G.next*GAP){ arrive(G.next); G.next++; }
+      G.orders.forEach(o=>{ if(o.state!=='wait') return; const w=G.gt-o.at; const p=o.el.querySelector('.pat'); if(p){ p.style.width=Math.max(0,100*(1-w/PATIENCE))+'%'; p.classList.toggle('imp',w>ONTIME); }
+        if(w>ONTIME && !o.el.classList.contains('imp')){ o.el.classList.add('imp'); o.el.querySelector('em').textContent='Impaciente'; }
+        if(w>=PATIENCE){ G.lost++; G.lostBy[o.k]++; setOrd(o,'lost','Se fue'); hudUpd(); } });
+      if(G.hold){ const p=(now-G.hold.t0)/HOLD; G.hold.el.querySelector('i').style.width=Math.min(100,100*p)+'%'; if(p>=1){ G.hold.el.querySelector('i').style.width='0'; G.hold=null; pieceDone(); } lamp.className='lamp on'; stat.textContent='Atornillando…'; }
+      else { lamp.className='lamp idle'; if(G.build){ G.idle+=dt; stat.textContent='Siguiente: '+PIECES[G.build.n]; } else stat.textContent=pull?'En espera: sin tarjeta no se arma.':'Plan terminado.';
+        if(!pull && G.build && G.idle-G.bossWarned>5){ G.bossWarned=G.idle; toast('El jefe: "¡La máquina no debe parar! Sigan el plan."',''); } }
+      G.invSum+=(G.stock.A+G.stock.N+G.stock.R)*dt; G.invN+=dt;
+      hT.querySelector('b').textContent=fmt(G.gt);
+      if(G.next>=DEMAND.length && G.orders.every(o=>o.state!=='wait')){ G.running=false; G.hold=null; setTimeout(()=>{ if(VIEW===myView) onEnd(G); },700); return; }
+    }
+    requestAnimationFrame(frame);
+  }
+  drawStock(); drawPlan();
+  if(!pull) nextFromPlan(); else drawBuild();
+  G.start=function(){ G.running=true; last=performance.now(); startClock(); requestAnimationFrame(frame); };
+  return G;
+}
+function summary(G){return {ontime:G.ontime,late:G.late,lost:G.lost,stock:Object.assign({},G.stock),left:G.stock.A+G.stock.N+G.stock.R,made:Object.assign({},G.made),avgInv:G.invN?G.invSum/G.invN:0,lostBy:Object.assign({},G.lostBy)};}
+
+/* ---------- Vistas ---------- */
+const VIEWS={};
+VIEWS.intro=function(){
+  chips('');
+  const w=mk('intro','<p class="k">ErgoSilla · Almacén · Mesa 6</p><h1>Controla<br>el caos</h1><p>La bodega está llena de sillas que nadie pidió, y aun así los clientes se van sin la silla que querían. Hoy ustedes van a comparar producir "empujando" un plan contra producir "jalando" con Kanban.</p>'+
+    '<div class="steps"><div><b>1. Ronda Empujar</b>Produzcan siguiendo el plan del pronóstico.</div><div><b>2. Diagnóstico</b>¿Por qué sobra y falta al mismo tiempo?</div><div><b>3. Tablero Kanban</b>Armen las reglas para producir solo lo que se consume.</div><div><b>4. Ronda Jalar</b>Los mismos clientes, ahora con tarjetas Kanban.</div></div>'+
+    '<button class="bigbtn" id="start">Empezar la ronda Empujar</button>');
+  w.querySelector('#start').addEventListener('click',()=>go('r1'));
+  const r=mk('panel roster','<h2>Repartan los roles</h2><p>Trabajan al mismo tiempo sobre la tablet. Si son 2, uno arma y otro surte y mueve tarjetas. Si son más de 3, los demás son el <b>jefe</b> que presiona en la ronda 1 y los <b>auditores</b> que cuentan sillas sobrantes.</p>');
+  [['arm','Arma cada silla pieza por pieza: base, asiento y respaldo.'],['sur','Lleva cada silla del almacén al cliente que la pidió.'],['men','Ronda 2: lleva las tarjetas Kanban del tablero a la estación.']].forEach(a=>{
+    const row=mk('prow','<label></label><span></span><input maxlength="16" autocomplete="off">',null,r);
+    row.querySelector('label').textContent=ROLES[a[0]]; row.querySelector('span').textContent=a[1];
+    const inp=row.querySelector('input'); inp.placeholder='Nombre (opcional)'; inp.value=st.names[a[0]]; inp.addEventListener('input',()=>{st.names[a[0]]=inp.value.trim();});
+  });
+};
+
+VIEWS.r1=function(){
+  const G=Round(false,G=>{ st.r1=summary(G); toast('Fin de la ronda: '+st.r1.ontime+' pedidos a tiempo, '+st.r1.lost+' clientes perdidos y '+st.r1.left+' sillas sobrantes en el almacén.','bad'); nextBtn('Diagnosticar →',()=>go('diag')); });
+  cardOverlay('Ronda 1 de 2 · Empujar','Sigan el plan','Armador: mantengan presionada cada pieza en orden (base, asiento, respaldo) para armar la silla que dice el plan. Surtidor: arrastren la silla del color correcto del almacén al pedido del cliente antes de que se vaya.','Arrancar la ronda',()=>G.start(),'El plan se hizo con un pronóstico: "se venden más las azules". ¿Será cierto?');
+};
+
+VIEWS.diag=function(){
+  const r=st.r1;
+  mk('ptitle','',{x:40,y:24}).textContent='Diagnóstico · ronda Empujar';
+  const p=mk('panel','',{x:40,y:54,w:1200,h:300}); p.style.padding='22px 28px';
+  const t=mk('tbl','<span></span><span class="h">Producidas</span><span class="h">Pedidas por clientes</span><span class="h">Sobraron en almacén</span><span class="h">Clientes perdidos</span>',null,p);
+  KEYS.forEach(k=>{
+    const asked=DEMAND.filter(x=>x===k).length, lostK=r.lostBy[k];
+    t.insertAdjacentHTML('beforeend','<span class="m"><i>'+chairSVG(k)+'</i>'+M[k].n+'</span><b>'+r.made[k]+'</b><b>'+asked+'</b><b class="'+(r.stock[k]>1?'bad':'ok')+'">'+r.stock[k]+'</b><b class="'+(lostK?'bad':'ok')+'">'+lostK+'</b>');
+  });
+  mk('qbig','',{x:40,y:384,w:1200}).textContent='¿Por qué sobraron sillas y al mismo tiempo se fueron clientes?';
+  const OPTS=[
+    ['Producimos lo que decía el pronóstico, no lo que los clientes se llevaron',null],
+    ['La máquina es muy lenta','La estación armó sillas todo el tiempo: velocidad hubo. El problema fue qué sillas armó.'],
+    ['Los clientes cambiaron de opinión','Los clientes pidieron lo mismo de siempre: más negras. Nadie miró lo que de verdad se consumía.']
+  ];
+  let solved=false;
+  shuffle(OPTS,4).forEach((o,i)=>{
+    const b=btn('opt','',{x:40+(i%2)*620,y:478+Math.floor(i/2)*110}); b.textContent=o[0];
+    b.addEventListener('click',()=>{
+      if(solved||b.classList.contains('no')) return;
+      if(o[1]){ st.err.diag++; b.classList.add('no'); toast(o[1],'bad'); return; }
+      solved=true; b.classList.add('ok');
+      toast('Exacto: en un sistema que empuja se produce por pronóstico. Sobra lo que no se vende y falta lo que sí.','good');
+      nextBtn('Armar el tablero Kanban →',()=>go('reglas'));
+    });
+  });
+};
+
+const RULES=[
+  {n:'Sin tarjeta Kanban no se produce',keep:true},
+  {n:'Se produce solo lo que el cliente se llevó',keep:true},
+  {n:'Máximo 2 sillas de cada modelo en el supermercado',keep:true},
+  {n:'Producir de más "por si acaso"',keep:false,why:'Producir por si acaso es sobreproducción: es lo que llenó el almacén en la ronda 1.'},
+  {n:'Que la máquina nunca pare',keep:false,why:'Una máquina ocupada haciendo sillas que nadie pidió solo genera inventario. Parar está bien si no hay tarjeta.'},
+  {n:'Seguir el pronóstico aunque los clientes pidan otra cosa',keep:false,why:'Con Kanban manda el consumo real del cliente, no el pronóstico.'}
+];
+VIEWS.reglas=function(){
+  const keep=mk('zone keep','<div class="zl">REGLAS DEL KANBAN</div>',{x:20,y:20,w:430,h:688});
+  mk('board','<div class="bh">TABLERO · ENSAMBLE</div>',null,keep);
+  const red=mk('zone redtag','<div class="zl">NO VA</div>',{x:830,y:20,w:430,h:688});
+  let done=0, nk=0, nr=0;
+  shuffle(RULES,17).forEach((o,i)=>{
+    const c=mk('rcard','',{x:515,y:24+i*114}); c.textContent=o.n; c.style.zIndex=++Z;
+    draggable(c,(x,y)=>{
+      const z=hit(x,y,[keep,red]); if(!z) return false;
+      if((z===keep)!==o.keep){ st.err.reglas++; toast(o.keep?'Esta sí es una regla del Kanban: así se produce solo lo necesario.':o.why,'bad'); return false; }
+      const n=z===keep?nk++:nr++;
+      c.style.transition='left .2s, top .2s'; c.classList.add('small','locked');
+      c.style.left=((z===keep?20:830)+115)+'px'; c.style.top=(z===keep?130+n*104:90+n*104)+'px';
+      if(++done===RULES.length){ toast('Tablero listo. Cada silla del supermercado tiene su tarjeta: cuando un cliente se la lleva, la tarjeta regresa a producción.','good'); nextBtn('Ronda Jalar →',()=>go('r2')); }
+    });
+  });
+  cardOverlay('Paso 3 · Tablero Kanban','Las reglas del juego','Kanban significa "tarjeta". Arrastren al tablero las reglas que hacen que se produzca solo lo que el cliente consume, y descarten las que regresarían el caos.','Empezar',null,'Kanban es un sistema que jala: el cliente es quien da la orden de producir.');
+};
+
+VIEWS.r2=function(){
+  const G=Round(true,G=>{ st.r2=summary(G); st.time=stopClock(); toast('Fin de la ronda: '+st.r2.ontime+' pedidos a tiempo y solo '+st.r2.left+' sillas en el supermercado.','good'); nextBtn('Ver resultados →',()=>go('resultado')); });
+  cardOverlay('Ronda 2 de 2 · Jalar','Ahora manda el cliente','Llegan los mismos clientes. Cada vez que el surtidor entrega una silla, aparece su tarjeta Kanban en el tablero. El mensajero la arrastra (o la toca) hacia la estación y solo entonces el armador puede armar esa silla.','Arrancar la ronda',()=>G.start(),'Si no hay tarjeta, la máquina espera. Eso está bien: no hay que producir lo que nadie pidió.');
+};
+
+VIEWS.resultado=function(){
+  const r1=st.r1, r2=st.r2;
+  const pDiag=Math.max(0,15-5*st.err.diag);
+  const pRules=Math.max(0,15-3*st.err.reglas);
+  const pOn=Math.round(50*r2.ontime/DEMAND.length);
+  const pInv=r1.left>0?Math.round(20*Math.max(0,Math.min(1,(r1.left-r2.left)/r1.left))):20;
+  const total=Math.min(100,pDiag+pRules+pOn+pInv);
+  const mx=Math.max(DEMAND.length,r1.left,r2.left,1);
+  const L=mk('panel res-l',
+    '<p class="ptitle">Pedidos entregados a tiempo (de '+DEMAND.length+')</p>'+
+    '<div class="bar"><span>Empujar</span><div class="t"><i id="b1" style="width:0;background:var(--red)"></i></div><span>'+r1.ontime+'</span></div>'+
+    '<div class="bar"><span>Jalar</span><div class="t"><i id="b2" style="width:0;background:var(--green)"></i></div><span>'+r2.ontime+'</span></div>'+
+    '<p class="ptitle" style="margin-top:6px">Sillas sobrantes al final</p>'+
+    '<div class="bar"><span>Empujar</span><div class="t"><i id="b3" style="width:0;background:var(--red)"></i></div><span>'+r1.left+'</span></div>'+
+    '<div class="bar"><span>Jalar</span><div class="t"><i id="b4" style="width:0;background:var(--green)"></i></div><span>'+r2.left+'</span></div>'+
+    '<p style="margin:0;font-size:19px;color:var(--muted)">Clientes perdidos: '+r1.lost+' empujando · '+r2.lost+' jalando · tiempo del equipo '+fmt(st.time)+'</p>'+
+    '<p class="ptitle" style="margin-top:6px">Lo que aprendimos</p><ul class="learn"><li>Empujar es producir por pronóstico: sobra lo que no se vende y falta lo que sí.</li><li>Kanban jala: cada tarjeta es una orden de producir lo que el cliente ya se llevó.</li><li>El límite de 2 por modelo controla el inventario y hace visible cualquier problema.</li><li>Una máquina parada sin tarjeta no es desperdicio; producir lo que nadie pidió sí.</li></ul>');
+  setTimeout(()=>{ [['#b1',r1.ontime/DEMAND.length],['#b2',r2.ontime/DEMAND.length],['#b3',r1.left/mx],['#b4',r2.left/mx]].forEach(a=>L.querySelector(a[0]).style.width=(100*a[1])+'%'); },80);
+  const R=mk('panel res-r','<p class="ptitle">Puntos de productividad</p><div class="pts">'+
+    '<span>Diagnóstico</span><span>'+pDiag+'/15</span>'+
+    '<span>Reglas del tablero Kanban</span><span>'+pRules+'/15</span>'+
+    '<span>Pedidos a tiempo jalando</span><span>'+pOn+'/50</span>'+
+    '<span>Reducción de inventario</span><span>'+pInv+'/20</span>'+
+    '<span class="tot">Total</span><span class="tot">'+total+'/100</span></div>'+
+    '<p style="margin:4px 0 0;font-size:17px;color:var(--muted)">Cada error en el diagnóstico resta 5 puntos y cada regla mal colocada resta 3.</p>'+
+    '<div class="code"><span>Calificación de la mesa<br>(escala del 1 al 10)</span><b>'+calif(total)+'/10</b></div>'+
+    '<button class="bigbtn" id="again" style="align-self:stretch;margin-top:12px;font-size:26px">Ver tabla de resultados →</button>');
+  R.querySelector('#again').addEventListener('click',()=>tablaResultados(6,[{c:calif(total),d:total+' de 100 puntos de productividad'}],reset));
+};
+
+/* ---------- Reinicio con confirmación ---------- */
+const rb=document.getElementById('reset'); let armT=null;
+rb.addEventListener('click',()=>{
+  if(rb.classList.contains('arm')){clearTimeout(armT); rb.classList.remove('arm'); rb.textContent='Reiniciar mesa'; reset(); return;}
+  rb.classList.add('arm'); rb.textContent='¿Seguro? Toca otra vez'; armT=setTimeout(()=>{rb.classList.remove('arm'); rb.textContent='Reiniciar mesa';},3000);
+});
+
+reset();
+/* ---------- Tabla de resultados (común a las 7 mesas) ---------- */
+function calif(t){return Math.max(1,Math.min(10,Math.round(t/10)));}
+function tablaResultados(mesa,teams,onNext){
+  const KEY='ergosilla-mesa'+mesa+'-tabla';
+  const load=()=>{try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}};
+  const save=l=>{try{localStorage.setItem(KEY,JSON.stringify(l.slice(0,60)));}catch(e){}};
+  let mem=load(), saved=false, newIds=[];
+  const o=document.createElement('div'); o.className='tr-ov'; stage.appendChild(o);
+  o.innerHTML='<div class="tr-l"><p class="tr-k">Mesa '+mesa+' · Tabla de resultados</p><h2>Guarden su calificación</h2><div class="tr-form" style="display:flex;flex-direction:column;gap:10px"></div><button class="tr-save">Guardar en la tabla</button><p class="tr-note">Escala del 1 al 10, igual en las 7 mesas: 10 es el mejor resultado. La tabla queda guardada en esta tablet.</p><div class="tr-btns"><button class="tr-next">Saltar y reiniciar</button><button class="tr-clear">Borrar tabla</button></div></div>'+
+    '<div class="tr-r"><p class="tr-k">Posiciones de la mesa '+mesa+'</p><div class="tr-head"><span>Lugar</span><span>Equipo</span><span>Calificación</span></div><div class="tr-list"></div></div>';
+  const form=o.querySelector('.tr-form'), list=o.querySelector('.tr-list'), note=o.querySelector('.tr-note'), sv=o.querySelector('.tr-save'), nx=o.querySelector('.tr-next'), cl=o.querySelector('.tr-clear');
+  const inputs=teams.map((t,i)=>{
+    const r=document.createElement('div'); r.className='tr-row'; r.innerHTML='<input maxlength="18" autocomplete="off"><div class="cal"><b></b><small>de 10</small></div><div class="det"></div>'; form.appendChild(r);
+    const inp=r.querySelector('input'); inp.placeholder=teams.length>1?'Nombre del equipo '+(i+1):'Nombre del equipo'; inp.value=t.n||'';
+    r.querySelector('b').textContent=t.c; r.querySelector('.det').textContent=t.d||''; return inp;
+  });
+  function render(){
+    list.innerHTML='';
+    if(!mem.length){ list.innerHTML='<div class="tr-empty">Todavía no hay equipos en la tabla.<br>¡Sean los primeros!</div>'; return; }
+    mem.slice(0,10).forEach((e,i)=>{
+      const it=document.createElement('div'); it.className='tr-item'+(i<3?' p'+(i+1):'')+(newIds.includes(e.id)?' new':'');
+      it.innerHTML='<span class="rk">'+(i+1)+'</span><span class="nm"><b></b><small></small></span><span class="cv">'+e.c+'<small>/10</small></span>';
+      it.querySelector('b').textContent=e.n; it.querySelector('small').textContent=e.d||''; list.appendChild(it);
+    });
+    if(mem.length>10){ const m=document.createElement('div'); m.className='tr-note'; m.style.textAlign='center'; m.textContent='+ '+(mem.length-10)+' equipos más'; list.appendChild(m); }
+  }
+  sv.addEventListener('click',()=>{
+    if(saved) return;
+    if(inputs.some(x=>!x.value.trim())){ note.classList.add('warn'); note.textContent='Escriban el nombre del equipo para guardarlo.'; inputs.find(x=>!x.value.trim()).focus(); return; }
+    const now=Date.now();
+    teams.forEach((t,i)=>{ const id=now+'-'+i; newIds.push(id); mem.push({id:id,n:inputs[i].value.trim(),c:t.c,d:t.d||'',t:now+i}); });
+    mem.sort((a,b)=>b.c-a.c||a.t-b.t); save(mem); saved=true;
+    inputs.forEach(x=>x.readOnly=true); sv.disabled=true; sv.textContent='Guardado';
+    const pos=mem.findIndex(e=>e.id===newIds[0])+1;
+    note.classList.remove('warn'); note.textContent=teams.length>1?'Guardados. Revisen las posiciones de la mesa.':('Quedaron en el lugar '+pos+' de '+mem.length+'.');
+    nx.textContent='Siguiente equipo'; nx.classList.add('go'); render();
+  });
+  nx.addEventListener('click',()=>{ o.remove(); if(onNext) onNext(); });
+  let armT=null;
+  cl.addEventListener('click',()=>{
+    if(cl.classList.contains('arm')){ clearTimeout(armT); cl.classList.remove('arm'); cl.textContent='Borrar tabla'; mem=[]; newIds=[]; save(mem); render(); return; }
+    cl.classList.add('arm'); cl.textContent='¿Borrar todo? Toca otra vez'; armT=setTimeout(()=>{cl.classList.remove('arm'); cl.textContent='Borrar tabla';},3000);
+  });
+  render();
+  if(inputs[0]&&!inputs[0].value) setTimeout(()=>{try{inputs[0].focus();}catch(e){}},50);
+}
+
+})();
+</script>
+<script>
+/* Pantalla completa al primer toque (tablets Android/Chrome); en iPad usar "Agregar a pantalla de inicio" */
+(function(){var done=false;document.addEventListener('pointerdown',function(){if(done)return;done=true;try{var d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(function(){});}catch(e){}},true);})();
+</script></body></html>
