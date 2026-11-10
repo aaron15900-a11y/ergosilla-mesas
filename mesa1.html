@@ -683,25 +683,33 @@ function tablaResultados(mesa,teams,onNext){
 <div class="mk-ov" id="mk-hint" role="dialog" aria-label="Pantalla completa"><b>Pantalla completa</b><p>Este navegador no permite pantalla completa con un botón (pasa en iPhone). Toca <strong>Compartir</strong> y luego <strong>Agregar a pantalla de inicio</strong>: al abrir el juego desde ese ícono se verá sin barras.</p><button type="button">Entendido</button></div>
 <script>
 (function(){
-  var d=document, de=d.documentElement, b=d.getElementById('fsb');
-  var ENTER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', EXIT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
-  function fsEl(){return d.fullscreenElement||d.webkitFullscreenElement||null;}
-  function canFs(){return !!(de.requestFullscreen||de.webkitRequestFullscreen);}
+  var d=document, b=d.getElementById('fsb');
+  var ENTER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', EXIT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>', HOME='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M6 10v10h12V10"/></svg>';
+  /* Si el juego está dentro de la página de inicio, la pantalla completa se controla desde ella para no perderla al cambiar de mesa */
+  var P=null; try{ if(window.parent!==window && window.parent.document) P=window.parent; }catch(e){ P=null; }
+  var TD=P?P.document:d, TE=TD.documentElement;
+  function fsEl(){return TD.fullscreenElement||TD.webkitFullscreenElement||null;}
+  function canFs(){return !!(TE.requestFullscreen||TE.webkitRequestFullscreen);}
   function refit(){try{window.dispatchEvent(new Event('resize'));}catch(e){}}
   function upd(){ if(!b) return; var on=!!fsEl(); b.innerHTML=on?EXIT:ENTER; b.classList.toggle('on',on); var t=on?'Salir de pantalla completa':'Pantalla completa'; b.setAttribute('aria-label',t); b.title=t; setTimeout(refit,120); }
+  function hint(){ var x=d.getElementById('mk-hint'); if(x) x.classList.add('on'); }
   if(b) b.addEventListener('click',function(e){
     e.preventDefault(); e.stopPropagation();
     try{
-      if(fsEl()){ var x=d.exitFullscreen||d.webkitExitFullscreen; if(x){var p=x.call(d); if(p&&p.catch)p.catch(function(){});} }
-      else if(canFs()){ var r=(de.requestFullscreen||de.webkitRequestFullscreen).call(de); if(r&&r.then){ r.then(function(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); }catch(e){} }).catch(function(){}); } }
-      else { d.getElementById('mk-hint').classList.add('on'); }
-    }catch(err){ d.getElementById('mk-hint').classList.add('on'); }
+      if(fsEl()){ var x=TD.exitFullscreen||TD.webkitExitFullscreen; if(x){var p=x.call(TD); if(p&&p.catch)p.catch(function(){});} }
+      else if(canFs()){ var r=(TE.requestFullscreen||TE.webkitRequestFullscreen).call(TE); if(r&&r.then){ r.then(function(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); }catch(e){} }).catch(function(){ hint(); }); } }
+      else hint();
+    }catch(err){ hint(); }
   });
-  d.addEventListener('fullscreenchange',upd); d.addEventListener('webkitfullscreenchange',upd);
+  TD.addEventListener('fullscreenchange',upd); TD.addEventListener('webkitfullscreenchange',upd);
+  if(P){ P.addEventListener('resize',function(){setTimeout(refit,60);}); }
   window.addEventListener('orientationchange',function(){setTimeout(refit,250);setTimeout(refit,700);});
   if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){refit();});
-  var rot=d.getElementById('mk-rot'); rot.querySelector('button').addEventListener('click',function(){rot.classList.add('off');});
-  var hint=d.getElementById('mk-hint'); hint.querySelector('button').addEventListener('click',function(){hint.classList.remove('on');});
+  /* Botón para regresar al menú de mesas (solo cuando se abrió desde la página de inicio); pide dos toques */
+  if(P && P.ergoMenu && b){ var h=d.createElement('button'); h.className='fsb'; h.type='button'; h.innerHTML=HOME; h.title='Volver al menú de mesas'; h.setAttribute('aria-label','Volver al menú de mesas'); b.parentNode.insertBefore(h,b);
+    var armed=false, t=null; h.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(!armed){ armed=true; h.classList.add('on'); h.title='Toca otra vez para volver al menú'; t=setTimeout(function(){armed=false;h.classList.remove('on');},2500); return; } clearTimeout(t); P.ergoMenu(); }); }
+  var rot=d.getElementById('mk-rot'); if(rot) rot.querySelector('button').addEventListener('click',function(){rot.classList.add('off');});
+  var hn=d.getElementById('mk-hint'); if(hn) hn.querySelector('button').addEventListener('click',function(){hn.classList.remove('on');});
   upd(); setTimeout(refit,60);
 })();
 </script></body></html>
