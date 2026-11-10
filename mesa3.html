@@ -1,4 +1,28 @@
-<!doctype html><html lang="es"><head><meta charset=utf8><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#141920"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23FFC531%22/%3E%3C/svg%3E"><style>html,body{background:#1B2129}:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="es"><head><meta charset=utf8><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="theme-color" content="#141920"><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 40 40%22%3E%3Crect width=%2240%22 height=%2240%22 rx=%228%22 fill=%22%23FFC531%22/%3E%3C/svg%3E"><style>html,body{background:#1B2129}:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style><style id="mobile-kit">
+/* Adaptación a celulares y tablets + botón de pantalla completa */
+html,body{overscroll-behavior:none}
+html body{height:100vh;height:100dvh;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+@media (max-width:1320px),(max-height:830px){
+  html body .vp{padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)!important}
+  html body .stage{border-radius:0!important;outline:0!important}
+  :root{padding-top:0!important;padding-bottom:0!important}
+}
+.fsb{flex:none;width:48px;height:44px;border-radius:9px;border:2px solid #FFC531;background:transparent;color:#FFC531;display:grid;place-items:center;padding:0;cursor:pointer}
+.fsb svg{width:26px;height:26px;display:block}
+.fsb.on{background:#FFC531;color:#1A1405}
+.fsb:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.mk-ov{position:fixed;inset:0;z-index:99999;background:rgba(14,18,23,.97);color:#F2F5F8;display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:28px;box-sizing:border-box;font:600 18px/1.45 'Barlow','Segoe UI',Arial,sans-serif}
+.mk-ov b{font:800 34px/1.05 'Barlow Condensed','Arial Narrow',Arial,sans-serif;text-transform:uppercase;letter-spacing:.02em}
+.mk-ov p{margin:0;max-width:440px;color:#C9D3DD}
+.mk-ov button{border:0;border-radius:10px;background:#FFC531;color:#1A1405;font:800 22px/1 'Barlow Condensed','Arial Narrow',Arial,sans-serif;padding:14px 24px;cursor:pointer}
+.mk-ov button.s{background:transparent;color:#A9B5C3;border:1px solid rgba(190,205,222,.3)}
+.mk-ov svg{width:84px;height:84px}
+#mk-rot .ph{animation:mkrot 2.2s ease-in-out infinite;transform-origin:50% 50%}
+@keyframes mkrot{0%,30%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+@media (orientation:portrait) and (max-width:1100px){#mk-rot{display:flex}}
+#mk-rot.off{display:none!important}
+#mk-hint.on{display:flex}
+</style></head><body>
 <title>Evita el Error</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -256,7 +280,7 @@ p,h1,h2,h3{margin:0}
         <div><b>ErgoSilla</b><span>Mesa 3 · Poka-Yoke</span></div>
       </div>
       <nav class="chips" id="chips" aria-label="Pasos"></nav>
-      <button class="reset" id="reset">Reiniciar mesa</button>
+      <button class="reset" id="reset">Reiniciar mesa</button><button class="fsb" id="fsb" type="button" aria-label="Pantalla completa" title="Pantalla completa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
     </header>
     <main class="scene" id="scene"></main>
   </div>
@@ -630,7 +654,29 @@ function tablaResultados(mesa,teams,onNext){
 })();
 </script>
 
+<div class="mk-ov" id="mk-rot" role="dialog" aria-label="Gira tu dispositivo"><svg viewBox="0 0 84 84"><g class="ph"><rect x="27" y="10" width="30" height="64" rx="6" fill="none" stroke="#FFC531" stroke-width="4"/><circle cx="42" cy="66" r="3" fill="#FFC531"/></g></svg><b>Gira tu dispositivo</b><p>Este juego se ve y se juega mejor en horizontal.</p><button class="s" type="button">Seguir en vertical</button></div>
+<div class="mk-ov" id="mk-hint" role="dialog" aria-label="Pantalla completa"><b>Pantalla completa</b><p>Este navegador no permite pantalla completa con un botón (pasa en iPhone). Toca <strong>Compartir</strong> y luego <strong>Agregar a pantalla de inicio</strong>: al abrir el juego desde ese ícono se verá sin barras.</p><button type="button">Entendido</button></div>
 <script>
-/* Pantalla completa al primer toque (tablets Android/Chrome); en iPad usar "Agregar a pantalla de inicio" */
-(function(){var done=false;document.addEventListener('pointerdown',function(){if(done)return;done=true;try{var d=document.documentElement;if(!document.fullscreenElement&&d.requestFullscreen)d.requestFullscreen().catch(function(){});}catch(e){}},true);})();
+(function(){
+  var d=document, de=d.documentElement, b=d.getElementById('fsb');
+  var ENTER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>', EXIT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
+  function fsEl(){return d.fullscreenElement||d.webkitFullscreenElement||null;}
+  function canFs(){return !!(de.requestFullscreen||de.webkitRequestFullscreen);}
+  function refit(){try{window.dispatchEvent(new Event('resize'));}catch(e){}}
+  function upd(){ if(!b) return; var on=!!fsEl(); b.innerHTML=on?EXIT:ENTER; b.classList.toggle('on',on); var t=on?'Salir de pantalla completa':'Pantalla completa'; b.setAttribute('aria-label',t); b.title=t; setTimeout(refit,120); }
+  if(b) b.addEventListener('click',function(e){
+    e.preventDefault(); e.stopPropagation();
+    try{
+      if(fsEl()){ var x=d.exitFullscreen||d.webkitExitFullscreen; if(x){var p=x.call(d); if(p&&p.catch)p.catch(function(){});} }
+      else if(canFs()){ var r=(de.requestFullscreen||de.webkitRequestFullscreen).call(de); if(r&&r.then){ r.then(function(){ try{ if(screen.orientation&&screen.orientation.lock) screen.orientation.lock('landscape').catch(function(){}); }catch(e){} }).catch(function(){}); } }
+      else { d.getElementById('mk-hint').classList.add('on'); }
+    }catch(err){ d.getElementById('mk-hint').classList.add('on'); }
+  });
+  d.addEventListener('fullscreenchange',upd); d.addEventListener('webkitfullscreenchange',upd);
+  window.addEventListener('orientationchange',function(){setTimeout(refit,250);setTimeout(refit,700);});
+  if(window.visualViewport) window.visualViewport.addEventListener('resize',function(){refit();});
+  var rot=d.getElementById('mk-rot'); rot.querySelector('button').addEventListener('click',function(){rot.classList.add('off');});
+  var hint=d.getElementById('mk-hint'); hint.querySelector('button').addEventListener('click',function(){hint.classList.remove('on');});
+  upd(); setTimeout(refit,60);
+})();
 </script></body></html>
