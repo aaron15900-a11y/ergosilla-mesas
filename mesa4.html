@@ -22,7 +22,7 @@ html body{height:100vh;height:100dvh;-webkit-tap-highlight-color:transparent;-we
 @media (orientation:portrait) and (max-width:1100px){#mk-rot{display:flex}}
 #mk-rot.off{display:none!important}
 #mk-hint.on{display:flex}
-</style></head><body>
+</style><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="ErgoSilla"></head><body>
 <title>Atrapa la Muda</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -497,7 +497,7 @@ function tablaResultados(mesa,teams,onNext){
 </script>
 
 <div class="mk-ov" id="mk-rot" role="dialog" aria-label="Gira tu dispositivo"><svg viewBox="0 0 84 84"><g class="ph"><rect x="27" y="10" width="30" height="64" rx="6" fill="none" stroke="#FFC531" stroke-width="4"/><circle cx="42" cy="66" r="3" fill="#FFC531"/></g></svg><b>Gira tu dispositivo</b><p>Este juego se ve y se juega mejor en horizontal.</p><button class="s" type="button">Seguir en vertical</button></div>
-<div class="mk-ov" id="mk-hint" role="dialog" aria-label="Pantalla completa"><b>Pantalla completa</b><p>Este navegador no permite pantalla completa con un botón (pasa en iPhone). Toca <strong>Compartir</strong> y luego <strong>Agregar a pantalla de inicio</strong>: al abrir el juego desde ese ícono se verá sin barras.</p><button type="button">Entendido</button></div>
+<div class="mk-ov" id="mk-hint" role="dialog" aria-label="Pantalla completa"><b>Pantalla completa en iPhone</b><p>Apple no permite que una página se ponga en pantalla completa con un botón. Para jugar sin barras, instálalo como app:</p><p style="text-align:left;max-width:460px"><strong>Safari:</strong> toca Compartir (el cuadro con la flecha) → <strong>Agregar a pantalla de inicio</strong>.<br><strong>Chrome:</strong> toca Compartir (arriba a la derecha) → <strong>Agregar a pantalla de inicio</strong>.<br>Luego abre ErgoSilla desde el ícono amarillo.</p><button type="button">Entendido</button></div>
 <script>
 (function(){
   var d=document, b=d.getElementById('fsb');
@@ -527,6 +527,10 @@ function tablaResultados(mesa,teams,onNext){
     var armed=false, t=null; h.addEventListener('click',function(e){ e.preventDefault(); e.stopPropagation(); if(!armed){ armed=true; h.classList.add('on'); h.title='Toca otra vez para volver al menú'; t=setTimeout(function(){armed=false;h.classList.remove('on');},2500); return; } clearTimeout(t); P.ergoMenu(); }); }
   var rot=d.getElementById('mk-rot'); if(rot) rot.querySelector('button').addEventListener('click',function(){rot.classList.add('off');});
   var hn=d.getElementById('mk-hint'); if(hn) hn.querySelector('button').addEventListener('click',function(){hn.classList.remove('on');});
+  /* Abierto desde el ícono de la pantalla de inicio: ya está sin barras, el botón sobra */
+  var SA=(window.navigator.standalone===true)||(window.matchMedia&&(matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches));
+  try{ if(P) SA=SA||(P.navigator.standalone===true)||P.matchMedia('(display-mode: fullscreen)').matches||P.matchMedia('(display-mode: standalone)').matches; }catch(e){}
+  if(SA && b){ b.style.display='none'; }
   upd(); setTimeout(refit,60);
 })();
 </script></body></html>
