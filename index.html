@@ -154,5 +154,5 @@ html.inGame,html.inGame body{overflow:hidden}
   window.addEventListener('resize',function(){ try{ gf.contentWindow&&gf.contentWindow.dispatchEvent(new Event('resize')); }catch(e){} });
   fromHash();
 })();
-</script></body>
+</script><script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script></body>
 </html>
